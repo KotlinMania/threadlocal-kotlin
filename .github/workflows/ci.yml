@@ -31,7 +31,7 @@ jobs:
           compileKotlinMacosArm64
           iosSimulatorArm64Test
           macosArm64Test
-          assembleTlsKotlinXCFramework
+          assembleThreadLocalKotlinXCFramework
           -PenableIosSimulatorTests=true
           --no-configuration-cache
 
