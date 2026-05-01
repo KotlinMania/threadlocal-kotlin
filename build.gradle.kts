@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 plugins {
     kotlin("multiplatform") version "2.3.20"
     kotlin("plugin.serialization") version "2.3.20"
-    id("org.jetbrains.kotlinx.atomicfu") version "0.27.0"
+    id("org.jetbrains.kotlinx.atomicfu") version "0.32.1"
     id("com.android.kotlin.multiplatform.library") version "9.2.0"
     id("com.vanniktech.maven.publish") version "0.30.0"
 }
@@ -92,7 +92,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("org.jetbrains.kotlinx:atomicfu:0.27.0")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.32.1")
             }
         }
         val commonTest by getting {
