@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 plugins {
     kotlin("multiplatform") version "2.3.20"
     kotlin("plugin.serialization") version "2.3.20"
-    id("org.jetbrains.kotlinx.atomicfu") version "0.32.1"
     id("com.android.kotlin.multiplatform.library") version "9.2.0"
     id("com.vanniktech.maven.publish") version "0.30.0"
 }
