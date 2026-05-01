@@ -3,6 +3,7 @@ package io.github.kotlinmania.tls
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
@@ -27,7 +28,7 @@ class CrossThreadTest {
         return { count.getAndIncrement() }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     @Test
     fun differentThread() = runBlocking {
         val create = makeCreate()
@@ -51,7 +52,7 @@ class CrossThreadTest {
         assertEquals(0, tls.getOr { create() })
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     @Test
     fun iter() = runBlocking {
         val tls = ThreadLocal<Int>()
