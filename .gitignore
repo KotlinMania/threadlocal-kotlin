@@ -31,6 +31,10 @@ NEXT_ACTIONS.md
 port_lint_proposed_changes.md
 .cache/
 *.lock
+kotlin-js-store/*
+!kotlin-js-store/yarn.lock
+!kotlin-js-store/wasm/
+!kotlin-js-store/wasm/yarn.lock
 tools/ast_distance/ast_distance
 tools/ast_distance/build/
 
