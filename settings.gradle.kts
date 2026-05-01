@@ -6,7 +6,7 @@ pluginManagement {
     }
     plugins {
         kotlin("multiplatform") version "2.3.20"
-        id("org.jetbrains.kotlinx.atomicfu") version "0.27.0"
+        id("org.jetbrains.kotlinx.atomicfu") version "0.32.1"
     }
 }
 
@@ -22,4 +22,3 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "threadlocal-kotlin"
-
