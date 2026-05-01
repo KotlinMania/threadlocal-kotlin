@@ -1,0 +1,12 @@
+tls-kotlin
+==========
+
+This project is a Kotlin Multiplatform port of the Rust `thread_local`
+crate.
+
+The upstream Rust source is fetched into `tmp/thread_local-1.1.9/` by
+`tools/fetch-rust-source.sh` and is not tracked in this repository.
+
+The project is dual-licensed Apache-2.0 OR MIT, matching the upstream
+Rust crate.
+

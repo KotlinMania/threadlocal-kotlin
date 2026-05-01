@@ -1,0 +1,38 @@
+/target/
+Cargo.lock
+*.wasm
+
+# Kotlin/Gradle build artifacts
+build/
+.gradle/
+.kotlin/
+local.properties
+*.class
+*.jar
+*.war
+*.ear
+
+# Keep the Gradle wrapper jar checked in so CI can run `./gradlew`.
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE/editor files
+.idea/
+*.iml
+.vscode/
+out/
+
+# Upstream Rust oracle, rehydrated per clone by tools/fetch-rust-source.sh.
+tmp/
+
+# AST distance reports and local state
+port_status_report.md
+high_priority_ports.md
+NEXT_ACTIONS.md
+.cache/
+*.lock
+tools/ast_distance/ast_distance
+tools/ast_distance/build/
+
+# OS cruft
+.DS_Store
+
