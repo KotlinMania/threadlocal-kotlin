@@ -14,9 +14,8 @@ import kotlin.test.assertNull
 
 /**
  * Mirrors the Rust crate's `different_thread`, `iter`, and
- * `miri_iter_soundness_check` inline tests. These exercise the
- * Native cross-thread storage contract — that two distinct OS
- * threads see distinct slots.
+ * `miri_iter_soundness_check` inline tests for the Android host
+ * target, whose actual storage is backed by `java.lang.ThreadLocal`.
  */
 class CrossThreadTest {
     private fun makeCreate(): () -> Int {
@@ -33,7 +32,7 @@ class CrossThreadTest {
         assertEquals(0, local.getOr { create() })
         assertEquals(0, local.get())
 
-        val other = newSingleThreadContext("threadlocal-different-thread")
+        val other = newSingleThreadContext("threadlocal-android-different-thread")
         try {
             withContext(other) {
                 assertNull(local.get())
@@ -54,8 +53,8 @@ class CrossThreadTest {
         val local = ThreadLocal<Int>()
         local.getOr { 1 }
 
-        val outer = newSingleThreadContext("threadlocal-iter-outer")
-        val inner = newSingleThreadContext("threadlocal-iter-inner")
+        val outer = newSingleThreadContext("threadlocal-android-iter-outer")
+        val inner = newSingleThreadContext("threadlocal-android-iter-inner")
         try {
             withContext(outer) {
                 local.getOr { 2 }
@@ -84,7 +83,7 @@ class CrossThreadTest {
         val local = ThreadLocal<Int>()
         local.getOr { 1 }
 
-        val other = newSingleThreadContext("threadlocal-miri-soundness")
+        val other = newSingleThreadContext("threadlocal-android-miri-soundness")
         try {
             val job = launch(other) {
                 local.getOr { 2 }

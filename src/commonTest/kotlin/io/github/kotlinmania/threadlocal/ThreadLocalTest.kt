@@ -1,3 +1,4 @@
+// port-lint: source lib.rs
 package io.github.kotlinmania.threadlocal
 
 import kotlinx.atomicfu.atomic
@@ -52,7 +53,7 @@ class ThreadLocalTest {
     }
 
     @Test
-    fun testEarlyReturnBuckets() {
+    fun testEarlyreturnBuckets() {
         // Use a high `id` here to guarantee that a lazily allocated
         // bucket somewhere in the middle is used. Neither iteration
         // nor `clear()` must early-return on `null` buckets that are
