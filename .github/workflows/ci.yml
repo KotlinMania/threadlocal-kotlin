@@ -35,8 +35,8 @@ jobs:
           -PenableIosSimulatorTests=true
           --no-configuration-cache
 
-  build-macos-x64:
-    name: Build and Test (macOS x64 / iOS simulator x64)
+  build-ios-x64:
+    name: Build and Test (iOS simulator x64)
     runs-on: macos-15-intel
     steps:
       - name: Checkout
@@ -51,13 +51,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.1.0
 
-      - name: Build and test Apple x64 targets
+      - name: Build and test iOS simulator x64 target
         run: >
           ./gradlew
           compileKotlinIosX64
-          compileKotlinMacosX64
           iosX64Test
-          macosX64Test
           -PenableIosSimulatorTests=true
           --no-configuration-cache
 
