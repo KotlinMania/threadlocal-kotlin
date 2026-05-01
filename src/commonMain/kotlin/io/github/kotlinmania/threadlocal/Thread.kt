@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
 /**
  * Data which is unique to the current thread while it is running.

@@ -1,7 +1,7 @@
-# tls-kotlin — Agent Guidelines
+# threadlocal-kotlin — Agent Guidelines
 
 This project is a Kotlin Multiplatform port of the Rust `thread_local`
-crate. The goal is to provide a reusable TLS / execution-local library
+crate. The goal is to provide a reusable thread-local / execution-local library
 for Kotlin Native first, with the same care as the other KotlinMania
 ports.
 

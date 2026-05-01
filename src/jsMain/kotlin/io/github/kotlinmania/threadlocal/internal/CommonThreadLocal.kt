@@ -1,11 +1,10 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
 /**
- * The wasmJs target is single-threaded — there is exactly one
- * execution thread, so per-thread storage collapses to a plain
- * process-global map. [CommonThreadLocal] still routes through it by
- * [Symbol] so the call surface stays consistent with the
- * multithreaded actuals.
+ * The JS target is single-threaded — there is exactly one execution
+ * thread, so per-thread storage collapses to a plain process-global
+ * map. [CommonThreadLocal] still routes through it by [Symbol] so the
+ * call surface stays consistent with the multithreaded actuals.
  */
 internal actual class CommonThreadLocal<T> actual constructor(private val name: Symbol) {
     actual fun get(): T? {

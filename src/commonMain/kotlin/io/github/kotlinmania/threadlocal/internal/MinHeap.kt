@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
 /**
  * A small binary min-heap of [Int] values. Mirrors the

@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -32,39 +32,39 @@ class CrossThreadTest {
     @Test
     fun differentThread() = runBlocking {
         val create = makeCreate()
-        val tls = ThreadLocal<Int>()
-        assertNull(tls.get())
-        assertEquals(0, tls.getOr { create() })
-        assertEquals(0, tls.get())
+        val local = ThreadLocal<Int>()
+        assertNull(local.get())
+        assertEquals(0, local.getOr { create() })
+        assertEquals(0, local.get())
 
-        val other = newSingleThreadContext("tls-different-thread")
+        val other = newSingleThreadContext("threadlocal-different-thread")
         try {
             withContext(other) {
-                assertNull(tls.get())
-                assertEquals(1, tls.getOr { create() })
-                assertEquals(1, tls.get())
+                assertNull(local.get())
+                assertEquals(1, local.getOr { create() })
+                assertEquals(1, local.get())
             }
         } finally {
             other.close()
         }
 
-        assertEquals(0, tls.get())
-        assertEquals(0, tls.getOr { create() })
+        assertEquals(0, local.get())
+        assertEquals(0, local.getOr { create() })
     }
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     @Test
     fun iter() = runBlocking {
-        val tls = ThreadLocal<Int>()
-        tls.getOr { 1 }
+        val local = ThreadLocal<Int>()
+        local.getOr { 1 }
 
-        val outer = newSingleThreadContext("tls-iter-outer")
-        val inner = newSingleThreadContext("tls-iter-inner")
+        val outer = newSingleThreadContext("threadlocal-iter-outer")
+        val inner = newSingleThreadContext("threadlocal-iter-inner")
         try {
             withContext(outer) {
-                tls.getOr { 2 }
+                local.getOr { 2 }
                 withContext(inner) {
-                    tls.getOr { 3 }
+                    local.getOr { 3 }
                 }
             }
         } finally {
@@ -72,29 +72,29 @@ class CrossThreadTest {
             inner.close()
         }
 
-        val sortedFromIter = tls.iter().asSequence().toMutableList().also { it.sort() }
+        val sortedFromIter = local.iter().asSequence().toMutableList().also { it.sort() }
         assertEquals(listOf(1, 2, 3), sortedFromIter)
 
-        val sortedFromIterMut = tls.iterMut().asSequence().toMutableList().also { it.sort() }
+        val sortedFromIterMut = local.iterMut().asSequence().toMutableList().also { it.sort() }
         assertEquals(listOf(1, 2, 3), sortedFromIterMut)
 
-        val sortedFromIntoIter = tls.intoIter().asSequence().toMutableList().also { it.sort() }
+        val sortedFromIntoIter = local.intoIter().asSequence().toMutableList().also { it.sort() }
         assertEquals(listOf(1, 2, 3), sortedFromIntoIter)
     }
 
     @Test
     fun miriIterSoundnessCheck() = runBlocking {
-        val tls = ThreadLocal<Int>()
-        tls.getOr { 1 }
+        val local = ThreadLocal<Int>()
+        local.getOr { 1 }
 
         val deferred = async(Dispatchers.Default) {
-            tls.getOr { 2 }
-            for (item in tls.iter()) {
+            local.getOr { 2 }
+            for (item in local.iter()) {
                 println(item)
             }
         }
 
-        for (item in tls.iter()) {
+        for (item in local.iter()) {
             println(item)
         }
 

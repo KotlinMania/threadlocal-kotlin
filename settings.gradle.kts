@@ -21,5 +21,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "tls-kotlin"
+rootProject.name = "threadlocal-kotlin"
 

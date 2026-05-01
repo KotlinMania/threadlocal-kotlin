@@ -26,15 +26,15 @@
  * Basic usage of [ThreadLocal]:
  *
  * ```
- * val tls: ThreadLocal<Int> = ThreadLocal()
- * assertEquals(null, tls.get())
- * assertEquals(5, tls.getOr { 5 })
- * assertEquals(5, tls.get())
+ * val local: ThreadLocal<Int> = ThreadLocal()
+ * assertEquals(null, local.get())
+ * assertEquals(5, local.getOr { 5 })
+ * assertEquals(5, local.get())
  * ```
  */
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
-import io.github.kotlinmania.tls.internal.currentThread
+import io.github.kotlinmania.threadlocal.internal.currentThread
 import kotlinx.atomicfu.AtomicArray
 import kotlinx.atomicfu.AtomicBoolean
 import kotlinx.atomicfu.AtomicInt

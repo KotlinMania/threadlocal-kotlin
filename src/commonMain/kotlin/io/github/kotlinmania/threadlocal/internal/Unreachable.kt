@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
 /**
  * Mirrors `thread_local-1.1.9/src/unreachable.rs`, which provides

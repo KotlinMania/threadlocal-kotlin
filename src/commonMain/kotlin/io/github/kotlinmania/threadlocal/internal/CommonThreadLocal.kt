@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
 /**
  * Per-OS-thread storage keyed by [Symbol]. Mirrors

@@ -1,6 +1,6 @@
-# tls-kotlin
+# threadlocal-kotlin
 
-Kotlin Multiplatform TLS and execution-local storage, starting as a
+Kotlin Multiplatform thread-local and execution-local storage, starting as a
 port of Rust's `thread_local` crate.
 
 This repository is Kotlin Native first, then the rest of KMP. Android
@@ -27,7 +27,7 @@ MinGW, iOS, JS, WASM, and Android library.
 Planned Maven coordinates:
 
 ```kotlin
-implementation("io.github.kotlinmania:tls-kotlin:0.1.0")
+implementation("io.github.kotlinmania:threadlocal-kotlin:0.1.1")
 ```
 
 ## License

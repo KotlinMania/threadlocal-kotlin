@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
 import kotlinx.atomicfu.atomic
 import kotlin.test.Test
@@ -16,18 +16,18 @@ class ThreadLocalTest {
     @Test
     fun sameThread() {
         val create = makeCreate()
-        val tls = ThreadLocal<Int>()
-        assertNull(tls.get())
-        assertEquals("ThreadLocal { local_data: null }", tls.toString())
-        assertEquals(0, tls.getOr { create() })
-        assertEquals(0, tls.get())
-        assertEquals(0, tls.getOr { create() })
-        assertEquals(0, tls.get())
-        assertEquals(0, tls.getOr { create() })
-        assertEquals(0, tls.get())
-        assertEquals("ThreadLocal { local_data: 0 }", tls.toString())
-        tls.clear()
-        assertNull(tls.get())
+        val local = ThreadLocal<Int>()
+        assertNull(local.get())
+        assertEquals("ThreadLocal { local_data: null }", local.toString())
+        assertEquals(0, local.getOr { create() })
+        assertEquals(0, local.get())
+        assertEquals(0, local.getOr { create() })
+        assertEquals(0, local.get())
+        assertEquals(0, local.getOr { create() })
+        assertEquals(0, local.get())
+        assertEquals("ThreadLocal { local_data: 0 }", local.toString())
+        local.clear()
+        assertNull(local.get())
     }
 
     @Test
@@ -87,8 +87,8 @@ class ThreadLocalTest {
         // guarantees Rust's `Sync` would. The runtime equivalent of
         // this test is simply that the type exists and can be
         // instantiated.
-        val tls: ThreadLocal<String> = ThreadLocal()
-        assertNull(tls.get())
+        val local: ThreadLocal<String> = ThreadLocal()
+        assertNull(local.get())
     }
 }
 

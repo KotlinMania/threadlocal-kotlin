@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
 /**
  * Wrapper around [ThreadLocal].

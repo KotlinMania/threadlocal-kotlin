@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

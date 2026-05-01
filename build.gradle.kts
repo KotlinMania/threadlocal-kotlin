@@ -33,17 +33,17 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
-    val xcf = XCFramework("TlsKotlin")
+    val xcf = XCFramework("ThreadLocalKotlin")
 
     macosArm64 {
         binaries.framework {
-            baseName = "TlsKotlin"
+            baseName = "ThreadLocalKotlin"
             xcf.add(this)
         }
     }
     macosX64 {
         binaries.framework {
-            baseName = "TlsKotlin"
+            baseName = "ThreadLocalKotlin"
             xcf.add(this)
         }
     }
@@ -51,19 +51,19 @@ kotlin {
     mingwX64()
     iosArm64 {
         binaries.framework {
-            baseName = "TlsKotlin"
+            baseName = "ThreadLocalKotlin"
             xcf.add(this)
         }
     }
     iosX64 {
         binaries.framework {
-            baseName = "TlsKotlin"
+            baseName = "ThreadLocalKotlin"
             xcf.add(this)
         }
     }
     iosSimulatorArm64 {
         binaries.framework {
-            baseName = "TlsKotlin"
+            baseName = "ThreadLocalKotlin"
             xcf.add(this)
         }
     }
@@ -78,7 +78,7 @@ kotlin {
     }
 
     android {
-        namespace = "io.github.kotlinmania.tls"
+        namespace = "io.github.kotlinmania.threadlocal"
         compileSdk = 34
         minSdk = 24
         withHostTestBuilder {}.configure {}
@@ -114,16 +114,16 @@ mavenPublishing {
         signAllPublications()
     }
 
-    coordinates(group.toString(), "tls-kotlin", version.toString())
+    coordinates(group.toString(), "threadlocal-kotlin", version.toString())
 
     pom {
-        name.set("tls-kotlin")
+        name.set("threadlocal-kotlin")
         description.set(
             "Kotlin Multiplatform port of Rust's thread_local crate, " +
-                "providing TLS and execution-local storage for Kotlin Native first."
+                "providing thread-local and execution-local storage for Kotlin Native first."
         )
         inceptionYear.set("2026")
-        url.set("https://github.com/KotlinMania/tls-kotlin")
+        url.set("https://github.com/KotlinMania/threadlocal-kotlin")
 
         licenses {
             license {
@@ -148,9 +148,9 @@ mavenPublishing {
         }
 
         scm {
-            url.set("https://github.com/KotlinMania/tls-kotlin")
-            connection.set("scm:git:git://github.com/KotlinMania/tls-kotlin.git")
-            developerConnection.set("scm:git:ssh://github.com/KotlinMania/tls-kotlin.git")
+            url.set("https://github.com/KotlinMania/threadlocal-kotlin")
+            connection.set("scm:git:git://github.com/KotlinMania/threadlocal-kotlin.git")
+            developerConnection.set("scm:git:ssh://github.com/KotlinMania/threadlocal-kotlin.git")
         }
     }
 }

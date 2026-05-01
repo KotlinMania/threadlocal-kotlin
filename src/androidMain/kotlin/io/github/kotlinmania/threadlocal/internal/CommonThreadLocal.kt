@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
 /**
  * On the Android (JVM) target, per-OS-thread storage is supplied by

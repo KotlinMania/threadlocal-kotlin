@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls
+package io.github.kotlinmania.threadlocal
 
 /**
  * The width, in bits, of the integer used for thread IDs and bucket

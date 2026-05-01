@@ -1,4 +1,4 @@
-tls-kotlin
+threadlocal-kotlin
 ==========
 
 This project is a Kotlin Multiplatform port of the Rust `thread_local`

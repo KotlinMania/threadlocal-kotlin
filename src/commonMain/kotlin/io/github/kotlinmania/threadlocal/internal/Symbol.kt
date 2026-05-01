@@ -1,4 +1,4 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
 /**
  * A symbol class that is used to define unique constants that are

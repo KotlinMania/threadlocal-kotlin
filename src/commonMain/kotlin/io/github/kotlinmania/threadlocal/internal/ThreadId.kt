@@ -1,6 +1,6 @@
-package io.github.kotlinmania.tls.internal
+package io.github.kotlinmania.threadlocal.internal
 
-import io.github.kotlinmania.tls.Thread
+import io.github.kotlinmania.threadlocal.Thread
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 
@@ -44,8 +44,8 @@ private val THREAD: CommonThreadLocal<Thread> = commonThreadLocal(Symbol("Thread
  * a per-thread slot so subsequent calls on the same OS thread are
  * cheap.
  *
- * Note on cleanup: Rust's upstream `thread_local` crate uses a TLS
- * destructor (`ThreadGuard`) to release the thread ID back to the
+ * Note on cleanup: Rust's upstream `thread_local` crate uses a
+ * thread-local destructor (`ThreadGuard`) to release the thread ID back to the
  * manager when an OS thread exits. Pure Kotlin/Multiplatform has no
  * portable thread-exit hook, so this port does not recycle IDs on
  * thread death — IDs grow monotonically with the number of distinct
