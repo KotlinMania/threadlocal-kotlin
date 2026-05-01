@@ -2,7 +2,7 @@ package io.github.kotlinmania.threadlocal
 
 /**
  * The width, in bits, of the integer used for thread IDs and bucket
- * arithmetic. Rust's upstream `thread_local` crate selects this from
+ * arithmetic. The upstream Rust crate selects this from
  * `target_pointer_width` (16 / 32 / 64); the Kotlin port pins it to 32
  * because thread IDs are stored as [Int].
  */

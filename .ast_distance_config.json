@@ -1,0 +1,21 @@
+{
+  "type": "port",
+  "name": "threadlocal-kotlin",
+  "source": {
+    "path": "tmp/thread_local-1.1.9/src",
+    "lang": "rust"
+  },
+  "target": {
+    "path": "src/commonMain/kotlin/io/github/kotlinmania/threadlocal",
+    "lang": "kotlin"
+  },
+  "checks": {
+    "deep": true,
+    "missing": true,
+    "todos": true,
+    "lint": true
+  },
+  "reexport_modules": [
+    "mod.rs"
+  ]
+}

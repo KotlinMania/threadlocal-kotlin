@@ -1,3 +1,4 @@
+// port-lint: source lib.rs
 /**
  * Per-object thread-local storage.
  *
@@ -155,8 +156,9 @@ public class ThreadLocal<T : Any> {
 
     /**
      * Returns an iterator that drains the local values of all threads
-     * in unspecified order, removing each value from this
-     * [ThreadLocal] as it is yielded.
+     * in unspecified order. Rust moves the [ThreadLocal] into its
+     * `IntoIter`; Kotlin has no move, so this method detaches the
+     * buckets immediately and leaves this [ThreadLocal] empty.
      */
     public fun intoIter(): IntoIter<T> = IntoIter(this)
 
@@ -221,7 +223,7 @@ internal class RawIter {
 
     fun <T : Any> nextEntry(threadLocal: ThreadLocal<T>): Entry<T>? {
         if (threadLocal.values.value == yielded) return null
-        while (true) {
+        while (bucket < BUCKETS) {
             val bucketArr = threadLocal.buckets[bucket].value
             if (bucketArr != null) {
                 while (index < bucketSize) {
@@ -235,6 +237,7 @@ internal class RawIter {
             }
             nextBucket()
         }
+        return null
     }
 
     private fun nextBucket() {
@@ -291,29 +294,59 @@ public class IterMut<T : Any> internal constructor(
 
 /** An iterator that moves out of a [ThreadLocal]. */
 public class IntoIter<T : Any> internal constructor(
-    private val threadLocal: ThreadLocal<T>,
+    threadLocal: ThreadLocal<T>,
 ) : Iterator<T> {
-    private val raw: RawIter = RawIter()
+    private val buckets: Array<Array<Entry<T>>?>
+    private val total: Int
+    private var yielded: Int = 0
+    private var bucket: Int = 0
+    private var bucketSize: Int = 1
+    private var index: Int = 0
     private var pending: T? = null
+
+    init {
+        total = threadLocal.values.value
+        buckets = Array(BUCKETS) { i ->
+            val bucketArr = threadLocal.buckets[i].value
+            threadLocal.buckets[i].value = null
+            bucketArr
+        }
+        threadLocal.values.value = 0
+    }
 
     override fun hasNext(): Boolean {
         if (pending != null) return true
-        val entry = raw.nextEntry(threadLocal) ?: return false
-        entry.present.value = false
-        pending = entry.value.value
-        entry.value.value = null
+        pending = nextValue() ?: return false
         return true
     }
 
     override fun next(): T {
-        if (pending == null) {
-            val entry = raw.nextEntry(threadLocal) ?: throw NoSuchElementException()
-            entry.present.value = false
-            pending = entry.value.value
-            entry.value.value = null
-        }
-        val v = pending!!
+        val v = pending ?: nextValue() ?: throw NoSuchElementException()
         pending = null
         return v
+    }
+
+    private fun nextValue(): T? {
+        if (yielded == total) return null
+        while (bucket < BUCKETS) {
+            val bucketArr = buckets[bucket]
+            if (bucketArr != null) {
+                while (index < bucketSize) {
+                    val entry = bucketArr[index]
+                    index += 1
+                    if (entry.present.value) {
+                        yielded += 1
+                        entry.present.value = false
+                        val value = entry.value.value
+                        entry.value.value = null
+                        return value
+                    }
+                }
+            }
+            bucketSize = bucketSize shl 1
+            bucket += 1
+            index = 0
+        }
+        return null
     }
 }

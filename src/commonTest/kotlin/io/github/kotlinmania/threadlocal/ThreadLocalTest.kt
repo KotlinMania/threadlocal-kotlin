@@ -6,7 +6,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-@Suppress("DEPRECATION")
 class ThreadLocalTest {
     private fun makeCreate(): () -> Int {
         val count = atomic(0)
@@ -75,6 +74,16 @@ class ThreadLocalTest {
             entry.observe()
         }
         assertEquals(1, dropped.value)
+    }
+
+    @Test
+    fun intoIterLeavesLocalEmpty() {
+        val local = ThreadLocal<Int>()
+        local.insert(Thread.new(1234), 1)
+
+        assertEquals(listOf(1), local.intoIter().asSequence().toList())
+        assertNull(local.get())
+        assertEquals(emptyList(), local.intoIter().asSequence().toList())
     }
 
     @Test

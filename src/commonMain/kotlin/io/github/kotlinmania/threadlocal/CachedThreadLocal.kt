@@ -1,5 +1,4 @@
-@file:Suppress("DEPRECATION")
-
+// port-lint: source cached.rs
 package io.github.kotlinmania.threadlocal
 
 /**
@@ -36,13 +35,13 @@ public class CachedThreadLocal<T : Any> {
      * Returns a mutable iterator over the local values of all
      * threads.
      */
-    public fun iterMut(): CachedIterMut<T> = CachedIterMut(inner.iterMut())
+    public fun iterMut(): IterMut<T> = inner.iterMut()
 
     /**
      * Returns an iterator that drains the local values of all
      * threads.
      */
-    public fun intoIter(): CachedIntoIter<T> = CachedIntoIter(inner.intoIter())
+    public fun intoIter(): IntoIter<T> = inner.intoIter()
 
     /**
      * Removes all thread-specific values from the [ThreadLocal],

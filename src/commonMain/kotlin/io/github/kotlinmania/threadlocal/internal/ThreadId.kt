@@ -1,3 +1,4 @@
+// port-lint: source thread_id.rs
 package io.github.kotlinmania.threadlocal.internal
 
 import io.github.kotlinmania.threadlocal.Thread
@@ -36,7 +37,7 @@ internal class ThreadIdManager : SynchronizedObject() {
 
 internal val THREAD_ID_MANAGER: ThreadIdManager = ThreadIdManager()
 
-private val THREAD: CommonThreadLocal<Thread> = commonThreadLocal(Symbol("Thread"))
+private val THREAD: CommonThreadLocal = commonThreadLocal(Symbol("Thread"))
 
 /**
  * Returns a thread record for the current OS thread, allocating a new
@@ -44,11 +45,14 @@ private val THREAD: CommonThreadLocal<Thread> = commonThreadLocal(Symbol("Thread
  * a per-thread slot so subsequent calls on the same OS thread are
  * cheap.
  *
- * Note on cleanup: Rust's upstream `thread_local` crate uses a
+ * Note on cleanup: the upstream Rust crate uses a
  * thread-local destructor (`ThreadGuard`) to release the thread ID back to the
  * manager when an OS thread exits. Pure Kotlin/Multiplatform has no
- * portable thread-exit hook, so this port does not recycle IDs on
- * thread death — IDs grow monotonically with the number of distinct
+ * portable thread-exit hook. Kotlin/Native cleaners are object-GC
+ * finalizers, not thread-exit destructors, and their cleanup action
+ * may run on a different thread, so they cannot safely touch
+ * `@ThreadLocal` storage. This port therefore does not recycle IDs on
+ * thread death; IDs grow monotonically with the number of distinct
  * threads observed.
  */
 internal fun currentThread(): Thread {

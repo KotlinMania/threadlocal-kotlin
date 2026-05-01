@@ -1,14 +1,17 @@
 package io.github.kotlinmania.threadlocal.internal
 
+import io.github.kotlinmania.threadlocal.Thread
+
 /**
- * Per-OS-thread storage keyed by [Symbol]. Mirrors
- * `kotlinx.coroutines.internal.CommonThreadLocal`: each platform
- * actual maintains a per-thread map keyed by symbol; reads and writes
- * are unsynchronized and only visible to the calling OS thread.
+ * Per-OS-thread storage for the current [Thread] record. Each
+ * platform actual stores and retrieves a value visible only to the
+ * calling OS thread. This follows Kotlin coroutines' internal
+ * `CommonThreadLocal` shape, narrowed to [Thread] so the Native
+ * actual does not need unchecked casts.
  */
-internal expect class CommonThreadLocal<T>(name: Symbol) {
-    fun get(): T?
-    fun set(value: T?)
+internal expect class CommonThreadLocal(name: Symbol) {
+    fun get(): Thread?
+    fun set(value: Thread?)
 }
 
-internal expect fun <T> commonThreadLocal(name: Symbol): CommonThreadLocal<T>
+internal expect fun commonThreadLocal(name: Symbol): CommonThreadLocal

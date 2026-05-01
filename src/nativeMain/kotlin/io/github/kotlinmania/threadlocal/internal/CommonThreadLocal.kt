@@ -1,20 +1,21 @@
 package io.github.kotlinmania.threadlocal.internal
 
+import io.github.kotlinmania.threadlocal.Thread
 import kotlin.native.concurrent.ThreadLocal
 
 /**
  * On Kotlin/Native, per-OS-thread storage is supplied by the
  * compiler via `@kotlin.native.concurrent.ThreadLocal` on a top-level
  * object. Every thread observes its own `Storage` map; this class
- * routes per-symbol reads and writes through that map.
+ * routes per-symbol reads and writes through that map. This is the
+ * same storage shape used by `kotlinx.coroutines.internal`
+ * `CommonThreadLocal`; this port stores only [Thread] records, so the
+ * map is typed and needs no unchecked cast.
  */
-internal actual class CommonThreadLocal<T> actual constructor(private val name: Symbol) {
-    actual fun get(): T? {
-        @Suppress("UNCHECKED_CAST")
-        return Storage[name] as T?
-    }
+internal actual class CommonThreadLocal actual constructor(private val name: Symbol) {
+    actual fun get(): Thread? = Storage[name]
 
-    actual fun set(value: T?) {
+    actual fun set(value: Thread?) {
         if (value == null) {
             Storage.remove(name)
         } else {
@@ -23,8 +24,8 @@ internal actual class CommonThreadLocal<T> actual constructor(private val name: 
     }
 }
 
-internal actual fun <T> commonThreadLocal(name: Symbol): CommonThreadLocal<T> =
+internal actual fun commonThreadLocal(name: Symbol): CommonThreadLocal =
     CommonThreadLocal(name)
 
 @ThreadLocal
-private object Storage : MutableMap<Symbol, Any?> by mutableMapOf()
+private object Storage : MutableMap<Symbol, Thread> by mutableMapOf()

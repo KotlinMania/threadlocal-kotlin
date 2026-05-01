@@ -2,7 +2,7 @@ package io.github.kotlinmania.threadlocal.internal
 
 /**
  * A small binary min-heap of [Int] values. Mirrors the
- * `BinaryHeap<Reverse<usize>>` that Rust's `thread_local` crate uses
+ * `BinaryHeap<Reverse<usize>>` that the upstream Rust crate uses
  * to recycle freed thread IDs in a deterministic, lowest-first order.
  *
  * Not thread-safe — callers synchronize externally.

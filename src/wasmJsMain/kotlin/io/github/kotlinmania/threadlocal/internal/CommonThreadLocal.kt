@@ -1,5 +1,7 @@
 package io.github.kotlinmania.threadlocal.internal
 
+import io.github.kotlinmania.threadlocal.Thread
+
 /**
  * The wasmJs target is single-threaded — there is exactly one
  * execution thread, so per-thread storage collapses to a plain
@@ -7,13 +9,10 @@ package io.github.kotlinmania.threadlocal.internal
  * [Symbol] so the call surface stays consistent with the
  * multithreaded actuals.
  */
-internal actual class CommonThreadLocal<T> actual constructor(private val name: Symbol) {
-    actual fun get(): T? {
-        @Suppress("UNCHECKED_CAST")
-        return storage[name] as T?
-    }
+internal actual class CommonThreadLocal actual constructor(private val name: Symbol) {
+    actual fun get(): Thread? = storage[name]
 
-    actual fun set(value: T?) {
+    actual fun set(value: Thread?) {
         if (value == null) {
             storage.remove(name)
         } else {
@@ -22,7 +21,7 @@ internal actual class CommonThreadLocal<T> actual constructor(private val name: 
     }
 }
 
-internal actual fun <T> commonThreadLocal(name: Symbol): CommonThreadLocal<T> =
+internal actual fun commonThreadLocal(name: Symbol): CommonThreadLocal =
     CommonThreadLocal(name)
 
-private val storage: MutableMap<Symbol, Any?> = mutableMapOf()
+private val storage: MutableMap<Symbol, Thread> = mutableMapOf()

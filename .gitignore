@@ -28,6 +28,7 @@ tmp/
 port_status_report.md
 high_priority_ports.md
 NEXT_ACTIONS.md
+port_lint_proposed_changes.md
 .cache/
 *.lock
 tools/ast_distance/ast_distance
@@ -35,4 +36,3 @@ tools/ast_distance/build/
 
 # OS cruft
 .DS_Store
-
