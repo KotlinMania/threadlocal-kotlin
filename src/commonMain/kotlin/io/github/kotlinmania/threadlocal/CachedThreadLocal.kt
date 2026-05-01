@@ -34,6 +34,11 @@ public class CachedThreadLocal<T : Any> {
     /**
      * Returns a mutable iterator over the local values of all
      * threads.
+     *
+     * Since this call borrows the [ThreadLocal] mutably, this
+     * operation can be done safely — the mutable borrow statically
+     * guarantees no other threads are currently accessing their
+     * associated values.
      */
     public fun iterMut(): IterMut<T> = inner.iterMut()
 

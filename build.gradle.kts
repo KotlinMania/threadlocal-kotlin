@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "io.github.kotlinmania"
-version = "0.1.1"
+version = "0.1.2"
 
 val androidSdkDir: String? =
     providers.environmentVariable("ANDROID_SDK_ROOT").orNull
@@ -36,12 +36,6 @@ kotlin {
     val xcf = XCFramework("ThreadLocalKotlin")
 
     macosArm64 {
-        binaries.framework {
-            baseName = "ThreadLocalKotlin"
-            xcf.add(this)
-        }
-    }
-    macosX64 {
         binaries.framework {
             baseName = "ThreadLocalKotlin"
             xcf.add(this)

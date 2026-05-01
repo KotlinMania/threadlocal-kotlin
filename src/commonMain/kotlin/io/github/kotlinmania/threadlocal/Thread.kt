@@ -1,3 +1,4 @@
+// port-lint: source thread_id.rs
 package io.github.kotlinmania.threadlocal
 
 /**
