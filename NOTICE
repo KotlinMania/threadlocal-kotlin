@@ -1,12 +1,29 @@
 threadlocal-kotlin
-==========
+==================
 
-This project is a Kotlin Multiplatform port of the Rust `thread_local`
-crate.
+A Kotlin Multiplatform port of the Rust `thread_local` crate.
 
-The upstream Rust source is fetched into `tmp/thread_local-1.1.9/` by
-`tools/fetch-rust-source.sh` and is not tracked in this repository.
+The upstream Rust source is dual-licensed Apache-2.0 OR MIT, copyright
+Amanieu d'Antras (https://github.com/Amanieu/thread_local-rs). The
+Kotlin translation here is a derivative work, distributed under the
+same dual Apache-2.0 OR MIT terms. All algorithmic and structural
+design credit — the bucket-of-power-of-two layout, the
+`BinaryHeap<Reverse<usize>>` thread-ID recycler, the lock-free
+`Entry` / `ThreadLocal` invariants, the `RawIter` state machine —
+belongs to the upstream author.
 
-The project is dual-licensed Apache-2.0 OR MIT, matching the upstream
-Rust crate.
+Each ported `.kt` file under
+`src/commonMain/kotlin/io/github/kotlinmania/threadlocal/` carries a
+one-line attribution comment naming the upstream `.rs` file it was
+translated from.
 
+Upstream:
+  Repo:    https://github.com/Amanieu/thread_local-rs
+  Version: 1.1.9 (2025-06-12)
+  License: Apache-2.0 OR MIT
+
+Kotlin port:
+  Maintainer: Sydney Renee <sydney@solace.ofharmony.ai> (@sydneyrenee)
+  Org:        The Solace Project / KotlinMania
+  Repo:       https://github.com/KotlinMania/threadlocal-kotlin
+  License:    LICENSE-APACHE OR LICENSE-MIT (your choice; matches upstream)

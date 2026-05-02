@@ -1,4 +1,4 @@
-// port-lint: source lib.rs
+// Translated from upstream thread_local-1.1.9/src/lib.rs
 /**
  * Per-object thread-local storage.
  *

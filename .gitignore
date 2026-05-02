@@ -1,7 +1,3 @@
-/target/
-Cargo.lock
-*.wasm
-
 # Kotlin/Gradle build artifacts
 build/
 .gradle/
@@ -15,28 +11,21 @@ local.properties
 # Keep the Gradle wrapper jar checked in so CI can run `./gradlew`.
 !gradle/wrapper/gradle-wrapper.jar
 
-# IDE/editor files
+# IDE / editor files
 .idea/
 *.iml
 .vscode/
 out/
 
-# Upstream Rust oracle, rehydrated per clone by tools/fetch-rust-source.sh.
-tmp/
-
-# AST distance reports and local state
-port_status_report.md
-high_priority_ports.md
-NEXT_ACTIONS.md
-port_lint_proposed_changes.md
-.cache/
-*.lock
+# Node / JS / WASM working trees
 kotlin-js-store/*
 !kotlin-js-store/yarn.lock
 !kotlin-js-store/wasm/
 !kotlin-js-store/wasm/yarn.lock
-tools/ast_distance/ast_distance
-tools/ast_distance/build/
+.cache/
+
+# Local working copy of the upstream Rust crate (reference only — never tracked).
+tmp/
 
 # OS cruft
 .DS_Store

@@ -1,4 +1,4 @@
-// port-lint: source lib.rs
+// Translated from upstream thread_local-1.1.9/src/lib.rs (#[cfg(test)] mod tests)
 package io.github.kotlinmania.threadlocal
 
 import kotlinx.atomicfu.AtomicInt
