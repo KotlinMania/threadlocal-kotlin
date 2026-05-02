@@ -141,6 +141,17 @@ public class ThreadLocal<T : Any> {
     }
 
     /**
+     * Returns the element for the current thread, or creates a default
+     * one if it doesn't exist.
+     *
+     * Rust's signature requires `T: Default` and calls `Default::default`
+     * to construct the missing value. Kotlin has no `Default` marker
+     * trait, so the caller supplies the default factory; semantically
+     * this is identical to [getOr] and exists for upstream API parity.
+     */
+    public fun getOrDefault(default: () -> T): T = getOr(default)
+
+    /**
      * Returns an iterator over the local values of all threads in
      * unspecified order.
      */
@@ -245,6 +256,20 @@ internal class RawIter {
         bucket += 1
         index = 0
     }
+
+    fun <T : Any> sizeHint(threadLocal: ThreadLocal<T>): Pair<Int, Int?> {
+        val total = threadLocal.values.value
+        return Pair(total - yielded, null)
+    }
+
+    fun <T : Any> sizeHintFrozen(threadLocal: ThreadLocal<T>): Pair<Int, Int?> {
+        val total = threadLocal.values.value
+        val remaining = total - yielded
+        return Pair(remaining, remaining)
+    }
+
+    override fun toString(): String =
+        "RawIter(yielded=$yielded, bucket=$bucket, bucketSize=$bucketSize, index=$index)"
 }
 
 /** Iterator over the contents of a [ThreadLocal]. */
@@ -265,6 +290,11 @@ public class Iter<T : Any> internal constructor(
         pending = null
         return v
     }
+
+    public fun sizeHint(): Pair<Int, Int?> = raw.sizeHint(threadLocal)
+
+    override fun toString(): String =
+        "Iter(threadLocal=$threadLocal, raw=$raw)"
 }
 
 /** Mutable iterator over the contents of a [ThreadLocal]. */
@@ -290,6 +320,13 @@ public class IterMut<T : Any> internal constructor(
         pending = null
         return v
     }
+
+    public fun sizeHint(): Pair<Int, Int?> = raw.sizeHintFrozen(threadLocal)
+
+    // Manual toString so we don't call `toString` on the [ThreadLocal], as
+    // doing so would create a reference to this thread's value that
+    // potentially aliases with a mutable reference we have given out.
+    override fun toString(): String = "IterMut(raw=$raw)"
 }
 
 /** An iterator that moves out of a [ThreadLocal]. */
@@ -348,5 +385,10 @@ public class IntoIter<T : Any> internal constructor(
             index = 0
         }
         return null
+    }
+
+    public fun sizeHint(): Pair<Int, Int?> {
+        val remaining = total - yielded
+        return Pair(remaining, remaining)
     }
 }
