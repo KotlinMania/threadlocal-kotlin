@@ -1,6 +1,7 @@
 // port-lint: source lib.rs
 package io.github.kotlinmania.threadlocal
 
+import kotlinx.atomicfu.AtomicInt
 import kotlinx.atomicfu.atomic
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,6 +38,18 @@ class ThreadLocalTest {
         // does not have deterministic drop, so the closest faithful
         // assertion is that draining via `intoIter` visits every
         // entry exactly once and removes it from the [ThreadLocal].
+        //
+        // Note on ordering: upstream Rust declares `let local` before
+        // `struct Dropped` because Rust's whole-function type inference
+        // resolves `local`'s `T` from the later `local.get_or(|| Dropped(..))`
+        // call. Kotlin's inference is lexical, so the local class must
+        // appear before the `ThreadLocal<Dropped>()` site.
+        class Dropped(val counter: AtomicInt) {
+            fun observe() {
+                counter.incrementAndGet()
+            }
+        }
+
         val local = ThreadLocal<Dropped>()
         val dropped = atomic(0)
         local.getOr { Dropped(dropped) }
@@ -54,6 +67,12 @@ class ThreadLocalTest {
 
     @Test
     fun testEarlyreturnBuckets() {
+        class Dropped(val counter: AtomicInt) {
+            fun observe() {
+                counter.incrementAndGet()
+            }
+        }
+
         // Use a high `id` here to guarantee that a lazily allocated
         // bucket somewhere in the middle is used. Neither iteration
         // nor `clear()` must early-return on `null` buckets that are
@@ -66,10 +85,10 @@ class ThreadLocalTest {
         local.insert(thread, Dropped(dropped))
 
         val first = local.iter().asSequence().first()
-        assertEquals(0, first.dropped.value)
+        assertEquals(0, first.counter.value)
 
         val firstMut = local.iterMut().asSequence().first()
-        assertEquals(0, firstMut.dropped.value)
+        assertEquals(0, firstMut.counter.value)
 
         for (entry in local.intoIter()) {
             entry.observe()
@@ -99,11 +118,5 @@ class ThreadLocalTest {
         // instantiated.
         val local: ThreadLocal<String> = ThreadLocal()
         assertNull(local.get())
-    }
-}
-
-private class Dropped(val dropped: kotlinx.atomicfu.AtomicInt) {
-    fun observe() {
-        dropped.incrementAndGet()
     }
 }
