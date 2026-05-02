@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "io.github.kotlinmania"
-version = "0.2.0"
+version = "0.2.1"
 
 val androidSdkDir: String? =
     providers.environmentVariable("ANDROID_SDK_ROOT").orNull
@@ -113,8 +113,10 @@ mavenPublishing {
     pom {
         name.set("threadlocal-kotlin")
         description.set(
-            "Kotlin Multiplatform port of Rust's thread_local crate, " +
-                "providing thread-local and execution-local storage for Kotlin Native first."
+            "Kotlin Multiplatform port of the Rust thread_local crate " +
+                "(Amanieu/thread_local-rs v1.1.9): per-object thread-local " +
+                "storage with O(1) lock-free reads, CAS-allocated buckets, " +
+                "and cross-thread iter()/iterMut()/intoIter()."
         )
         inceptionYear.set("2026")
         url.set("https://github.com/KotlinMania/threadlocal-kotlin")
