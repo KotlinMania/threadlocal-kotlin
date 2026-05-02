@@ -37,14 +37,14 @@ This library is option 4: a faithful port of a battle-tested Rust implementation
 ```kotlin
 // Gradle Kotlin DSL
 dependencies {
-    implementation("io.github.kotlinmania:threadlocal-kotlin:0.2.0")
+    implementation("io.github.kotlinmania:threadlocal-kotlin:0.2.1")
 }
 ```
 
 ```toml
 # Version catalog (libs.versions.toml)
 [libraries]
-threadlocal-kotlin = { module = "io.github.kotlinmania:threadlocal-kotlin", version = "0.2.0" }
+threadlocal-kotlin = { module = "io.github.kotlinmania:threadlocal-kotlin", version = "0.2.1" }
 ```
 
 ## Quick start
