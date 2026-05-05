@@ -75,7 +75,7 @@ See [`src/commonTest/`](src/commonTest/kotlin/io/github/kotlinmania/threadlocal/
 
 | Tier | Targets |
 |---|---|
-| Native (Apple) | `macosArm64`, `macosX64`, `iosArm64`, `iosX64`, `iosSimulatorArm64` |
+| Native (Apple) | `macosArm64`, `iosArm64`, `iosSimulatorArm64` |
 | Native (Linux) | `linuxX64` |
 | Native (Windows) | `mingwX64` |
 
