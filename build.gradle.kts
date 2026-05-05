@@ -113,6 +113,15 @@ rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
     resolution("diff", "8.0.3")
     resolution("serialize-javascript", "7.0.5")
     resolution("webpack", "5.106.2")
+    resolution("follow-redirects", "1.16.0")
+    resolution("lodash", "4.18.1")
+    resolution("ajv", "8.20.0")
+    resolution("brace-expansion", "5.0.5")
+    resolution("flatted", "3.4.2")
+    resolution("minimatch", "10.2.5")
+    resolution("picomatch", "4.0.4")
+    resolution("qs", "6.15.1")
+    resolution("socket.io-parser", "4.2.6")
 }
 
 mavenPublishing {
