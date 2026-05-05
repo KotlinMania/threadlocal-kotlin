@@ -5,7 +5,7 @@ pluginManagement {
         gradlePluginPortal()
     }
     plugins {
-        kotlin("multiplatform") version "2.3.20"
+        kotlin("multiplatform") version "2.3.21"
         id("org.jetbrains.kotlinx.atomicfu") version "0.32.1"
     }
 }
