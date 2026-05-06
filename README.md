@@ -1,136 +1,103 @@
-# threadlocal-kotlin
+# threadlocal-kotlin in Kotlin
 
-> Kotlin Multiplatform port of the Rust [`thread_local`](https://github.com/Amanieu/thread_local-rs) crate — per-object thread-local storage with O(1) access, lock-free buckets, and `iter` / `iterMut` / `intoIter` over every thread's slot.
+[![GitHub link](https://img.shields.io/badge/GitHub-KotlinMania%2Fthreadlocal--kotlin-blue.svg)](https://github.com/KotlinMania/threadlocal-kotlin)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.kotlinmania/threadlocal-kotlin)](https://central.sonatype.com/artifact/io.github.kotlinmania/threadlocal-kotlin)
+[![Build status](https://img.shields.io/github/actions/workflow/status/KotlinMania/threadlocal-kotlin/ci.yml?branch=main)](https://github.com/KotlinMania/threadlocal-kotlin/actions)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/KotlinMania/threadlocal-kotlin/ci.yml?branch=master&label=CI&logo=github)](https://github.com/KotlinMania/threadlocal-kotlin/actions/workflows/ci.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.kotlinmania/threadlocal-kotlin?label=Maven%20Central&logo=apachemaven)](https://central.sonatype.com/artifact/io.github.kotlinmania/threadlocal-kotlin)
-[![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue)](#license)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?logo=kotlin)](https://kotlinlang.org/)
-[![KMP](https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF?logo=kotlin)](https://kotlinlang.org/docs/multiplatform.html)
-[![GitHub stars](https://img.shields.io/github/stars/KotlinMania/threadlocal-kotlin?style=social)](https://github.com/KotlinMania/threadlocal-kotlin/stargazers)
-[![Discord](https://img.shields.io/badge/Discord-Solace%20Project-5865F2?logo=discord&logoColor=white)](https://discord.gg/rJqVeSmx4)
+This is a Kotlin Multiplatform line-by-line transliteration port of [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs).
+
+**Original Project:** This port is based on [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs). All design credit and project intent belong to the upstream authors; this repository is a faithful port to Kotlin Multiplatform with no behavioural changes intended.
+
+### Porting status
+
+This is an **in-progress port**. The goal is feature parity with the upstream Rust crate while providing a native Kotlin Multiplatform API. Every Kotlin file carries a `// port-lint: source <path>` header naming its upstream Rust counterpart so the AST-distance tool can track provenance.
 
 ---
 
-## What this is
+## Upstream README — `Amanieu/thread_local-rs`
 
-A line-by-line transliteration of [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs) (v1.1.9) into Kotlin Multiplatform, preserving the upstream's:
+> The text below is reproduced and lightly edited from [`https://github.com/Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs). It is the upstream project's own description and remains under the upstream authors' authorship; links have been rewritten to absolute upstream URLs so they continue to resolve from this repository.
 
-- **Per-object thread-local storage.** Each `ThreadLocal<T>` is its own slab — unlike `@ThreadLocal` annotations which only work on `static` storage, you can have many independent `ThreadLocal` instances.
-- **Lock-free fast path.** A read of an existing slot takes one atomic load and one bit check. Bucket allocation is the only synchronization point, and it's CAS-based.
-- **Cross-thread iteration.** `iter()`, `iterMut()`, and `intoIter()` walk every thread's slot — useful for collecting per-thread counters at the end of a workload.
+## thread_local
 
-If you've used the Rust crate, the Kotlin API will feel identical (modulo `snake_case` → `camelCase`).
 
-## Why a port
+[![Build Status](https://github.com/Amanieu/thread_local-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/Amanieu/thread_local-rs/actions) [![crates.io](https://img.shields.io/crates/v/thread_local.svg)](https://crates.io/crates/thread_local)
 
-Kotlin's stdlib has no per-object thread-local primitive in `commonMain`. The only options today are:
+This library provides the `ThreadLocal` type which allow a separate copy of an
+object to be used for each thread. This allows for per-object thread-local
+storage, unlike the standard library's `thread_local!` macro which only allows
+static thread-local storage.
 
-1. JVM `java.lang.ThreadLocal` — JVM-only, not multiplatform.
-2. Coroutine `ThreadLocal.asContextElement()` — JVM-only, requires a coroutine context.
-3. Roll your own atomics + bucket math.
+[Documentation](https://docs.rs/thread_local/)
 
-This library is option 4: a faithful port of a battle-tested Rust implementation, available on every Kotlin Native target.
+## Usage
 
-## Install
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+thread_local = "1.1"
+```
+
+## Minimum Rust version
+
+This crate's minimum supported Rust version (MSRV) is 1.63.0.
+
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0, ([LICENSE-APACHE](https://github.com/Amanieu/thread_local-rs/blob/HEAD/LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license ([LICENSE-MIT](https://github.com/Amanieu/thread_local-rs/blob/HEAD/LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
+additional terms or conditions.
+
+---
+
+## About this Kotlin port
+
+### Installation
 
 ```kotlin
-// Gradle Kotlin DSL
 dependencies {
     implementation("io.github.kotlinmania:threadlocal-kotlin:0.2.1")
 }
 ```
 
-```toml
-# Version catalog (libs.versions.toml)
-[libraries]
-threadlocal-kotlin = { module = "io.github.kotlinmania:threadlocal-kotlin", version = "0.2.1" }
-```
-
-## Quick start
-
-```kotlin
-import io.github.kotlinmania.threadlocal.ThreadLocal
-
-val local: ThreadLocal<Int> = ThreadLocal()
-
-// First access in this thread — `create` runs, value cached.
-val v = local.getOr { 42 }      // 42
-
-// Subsequent access in the same thread — no allocation.
-val w = local.get()             // 42
-
-// Walk every thread's slot.
-for (perThread in local.iter()) {
-    println(perThread)
-}
-
-// Drain — leaves the ThreadLocal empty.
-val all: List<Int> = local.intoIter().asSequence().toList()
-```
-
-See [`src/commonTest/`](src/commonTest/kotlin/io/github/kotlinmania/threadlocal/) for the full upstream test suite ported to Kotlin.
-
-## Targets
-
-| Tier | Targets |
-|---|---|
-| Native (Apple) | `macosArm64`, `macosX64`, `iosArm64`, `iosX64`, `iosSimulatorArm64` |
-| Native (Linux) | `linuxX64` |
-| Native (Windows) | `mingwX64` |
-
-CI verifies all native targets on every PR.
-
-## Building from source
+### Building
 
 ```bash
-git clone https://github.com/KotlinMania/threadlocal-kotlin.git
-cd threadlocal-kotlin
-
-./gradlew compileKotlinMacosArm64
-./gradlew macosArm64Test
+./gradlew build
+./gradlew test
 ```
 
-If you want to consult the upstream while working on the port, clone [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs) into `tmp/thread_local-1.1.9/` (gitignored). Every Kotlin file carries a one-line `// Translated from upstream …` header pointing at the upstream `.rs` it mirrors — that header is the human-readable provenance, not a build-time check.
+### Targets
 
-Translation rules are documented in [`AGENTS.md`](./AGENTS.md). Notable port-time decisions:
+- macOS arm64
+- Linux x64
+- Windows mingw-x64
+- iOS arm64 / simulator-arm64 (Swift export + XCFramework)
+- JS (browser + Node.js)
+- Wasm-JS (browser + Node.js)
+- Android (API 24+)
 
-- **`cached.rs` is intentionally not ported** — it's `#![allow(deprecated)]` end-to-end upstream and exists only for crates.io v1.0 ABI compatibility. See [`AGENTS.md`](./AGENTS.md#intentionally-not-ported-cachedrs).
-- **`Drop` impls collapse under GC** — `Entry::drop`, `ThreadLocal::drop`, `ThreadGuard::drop` all become no-ops because Kotlin's GC runs the equivalent cleanup.
-- **No thread-exit ID recycling.** Rust uses TLS destructors via `ThreadGuard` to recycle thread IDs back into a min-heap. Kotlin/Multiplatform has no portable thread-exit hook, so IDs grow monotonically with the count of distinct OS threads observed. Documented at [`internal/ThreadId.kt`](src/commonMain/kotlin/io/github/kotlinmania/threadlocal/internal/ThreadId.kt).
+### Porting guidelines
 
-## Attribution
+See [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) for translator discipline, port-lint header convention, and Rust → Kotlin idiom mapping.
 
-This is a derivative work of [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs), copyright **Amanieu d'Antras**, dual-licensed Apache-2.0 OR MIT. All algorithmic and structural design credit — the bucket-of-power-of-two layout, the `BinaryHeap<Reverse<usize>>` ID recycler, the lock-free `Entry`/`ThreadLocal` invariants, the `RawIter` state machine — belongs to the upstream author.
+### License
 
-The Kotlin port translates that work line-by-line and re-publishes it under the same dual license. See [`NOTICE`](./NOTICE) for the long-form attribution.
+This Kotlin port is distributed under the same Apache-2.0 license as the upstream [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs). See [LICENSE](LICENSE) (and any sibling `LICENSE-*` / `NOTICE` files mirrored from upstream) for the full text.
 
-| | |
-|---|---|
-| Upstream repo | https://github.com/Amanieu/thread_local-rs |
-| Upstream version | 1.1.9 (2025-06-12) |
-| Upstream author | [Amanieu d'Antras](https://github.com/Amanieu) |
-| Upstream license | Apache-2.0 OR MIT |
+Original work copyrighted by the thread_local-rs authors.  
+Kotlin port: Copyright (c) 2026 Sydney Renee and The Solace Project.
 
-## Maintainer
+### Acknowledgments
 
-**Sydney Renee** &mdash; [@sydneyrenee](https://github.com/sydneyrenee) &mdash; <sydney@solace.ofharmony.ai>
-
-**The Solace Project** &mdash; published under the [KotlinMania](https://github.com/KotlinMania) GitHub organization.
-
-Discussion, issues, and KMP porting talk: **[Solace Project Discord](https://discord.gg/rJqVeSmx4)**.
-
-If this library helps you, a ⭐ on the repo is the easiest way to say so.
-
-## License
-
-Dual-licensed under either of:
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](./LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](./LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option. Mirrors the upstream Rust crate.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this work shall be dual-licensed as above, without any additional terms or conditions.
+Thanks to the [`Amanieu/thread_local-rs`](https://github.com/Amanieu/thread_local-rs) maintainers and contributors for the original Rust implementation. This port reproduces their work in Kotlin Multiplatform; bug reports about upstream design or behavior should go to the upstream repository.
