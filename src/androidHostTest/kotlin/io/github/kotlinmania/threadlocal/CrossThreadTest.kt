@@ -14,8 +14,8 @@ import kotlin.test.assertNull
 
 /**
  * Mirrors the Rust crate's `different_thread`, `iter`, and
- * `miri_iter_soundness_check` inline tests for the Android host
- * target, whose actual storage is backed by `java.lang.ThreadLocal`.
+ * `miri_iter_soundness_check` inline tests for the Android host target
+ * through this library's public [ThreadLocal] API.
  */
 class CrossThreadTest {
     private fun makeCreate(): () -> Int {

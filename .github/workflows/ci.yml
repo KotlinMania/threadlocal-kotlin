@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 jobs:
   build-macos-arm64:
     name: Build and Test (macOS arm64 / iOS simulator arm64 / Swift)
@@ -36,7 +39,7 @@ jobs:
           --no-configuration-cache
 
   build-linux:
-    name: Build and Test (Linux / Android / JS / WASM)
+    name: Build and Test (JVM / Linux / Android / JS / WASM)
     runs-on: ubuntu-latest
 
     steps:
@@ -69,11 +72,12 @@ jobs:
           npm --version
           yarn --version
 
-      - name: Build and test Linux, Android, JS, and WASM targets
+      - name: Build and test JVM, Linux, Android, JS, and WASM targets
         env:
           ORG_GRADLE_PROJECT_kotlin_js_yarn_download: "false"
         run: >
           ./gradlew
+          jvmTest
           compileAndroidMain
           assembleUnitTest
           assembleAndroidTest
