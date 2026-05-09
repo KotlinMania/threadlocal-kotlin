@@ -103,6 +103,15 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
+        val jvmAndAndroidMain by creating {
+            dependsOn(commonMain)
+        }
+        val jvmMain by getting {
+            dependsOn(jvmAndAndroidMain)
+        }
+        val androidMain by getting {
+            dependsOn(jvmAndAndroidMain)
+        }
     }
     jvmToolchain(21)
 }
