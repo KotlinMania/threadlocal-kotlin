@@ -26,7 +26,7 @@ If you've used the Rust crate, the Kotlin API will feel identical (modulo `snake
 
 Kotlin's stdlib has no per-object thread-local primitive in `commonMain`. The only options today are:
 
-1. JVM `java.lang.ThreadLocal` — JVM-only, not multiplatform.
+1. JVM platform thread-local APIs — JVM-only, not multiplatform.
 2. Coroutine `ThreadLocal.asContextElement()` — JVM-only, requires a coroutine context.
 3. Roll your own atomics + bucket math.
 
