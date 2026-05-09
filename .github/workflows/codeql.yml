@@ -2,12 +2,16 @@ name: CodeQL
 
 # Universal CodeQL config for KotlinMania repos.
 #
-# We do NOT analyze `java-kotlin`. The CodeQL Kotlin extractor only hooks
-# JVM `kotlinc` invocations; Kotlin/Native and Kotlin/JS compilations
-# produce no traced events, so `database finalize` aborts with
-# "CodeQL could not process any code written in Java/Kotlin" on KMP
-# projects without a JVM target. This repo has no maintained JavaScript or
-# TypeScript source for CodeQL to extract, so `actions` covers workflow files.
+# `actions` covers workflow files. This repo has no maintained JavaScript or
+# TypeScript source for CodeQL to extract, so `javascript-typescript` is
+# omitted.
+#
+# `java-kotlin` runs in `manual` mode, building only `compileAndroidMain`. The
+# `com.android.kotlin.multiplatform.library` plugin emits real JVM `.class`
+# files under `build/classes/kotlin/android/main/`, which is what CodeQL's
+# Kotlin extractor (LD_PRELOAD on JVM `kotlinc`) can ingest. Earlier attempts
+# with `compileKotlinMetadata` failed because the metadata compiler emits
+# `.knm` files via a different frontend the tracer doesn't hook.
 
 on:
   push:
@@ -34,16 +38,51 @@ jobs:
         include:
           - language: actions
             build-mode: none
+          - language: java-kotlin
+            build-mode: manual
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        if: matrix.build-mode == 'manual'
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: zulu
+          java-version: '21'
+
+      - name: Setup Gradle
+        if: matrix.build-mode == 'manual'
+        uses: gradle/actions/setup-gradle@v6.1.0
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+
+      - name: Compile Android Kotlin (JVM bytecode) for CodeQL extraction
+        if: matrix.build-mode == 'manual'
+        shell: bash
+        # `compileAndroidMain` is the KMP compilation that emits JVM `.class`
+        # files (`com.android.kotlin.multiplatform.library` plugin). That's
+        # what CodeQL's Kotlin extractor's LD_PRELOAD tracer can hook.
+        #
+        # `--rerun-tasks` defeats Gradle's up-to-date check and any restored
+        # build cache from setup-gradle, ensuring kotlinc is actually invoked.
+        #
+        # `kotlin.compiler.execution.strategy=out-of-process` spawns a fresh
+        # kotlinc JVM per compilation (instead of the long-lived `daemon`
+        # default or function-call `in-process` mode). The tracer hooks new
+        # process invocations, so out-of-process gives it a process exec to
+        # intercept.
+        run: |
+          ./gradlew compileAndroidMain \
+            --rerun-tasks \
+            -Pkotlin.compiler.execution.strategy=out-of-process \
+            --no-configuration-cache \
+            --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

@@ -79,9 +79,8 @@ jobs:
           ./gradlew
           jvmTest
           compileAndroidMain
-          assembleAndroidHostTest
-          testAndroidHostTest
-          assembleAndroidDeviceTest
+          assembleUnitTest
+          assembleAndroidTest
           jsBrowserTest
           jsNodeTest
           linuxX64Test
