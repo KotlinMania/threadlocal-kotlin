@@ -3,8 +3,8 @@ package io.github.kotlinmania.threadlocal.internal
 import io.github.kotlinmania.threadlocal.Thread
 
 /**
- * On the JVM target, per-OS-thread storage is supplied by
- * Kotlin/JVM `ThreadLocal`. Each [CommonThreadLocal] wraps a single
+ * On the JVM target, per-OS-thread storage is supplied by platform
+ * `ThreadLocal`. Each [CommonThreadLocal] wraps a single
  * platform thread-local; reads and writes only ever touch the calling
  * thread's slot.
  */
