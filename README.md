@@ -20,7 +20,7 @@ A line-by-line transliteration of [`Amanieu/thread_local-rs`](https://github.com
 - **Lock-free fast path.** A read of an existing slot takes one atomic load and one bit check. Bucket allocation is the only synchronization point, and it's CAS-based.
 - **Cross-thread iteration.** `iter()`, `iterMut()`, and `intoIter()` walk every thread's slot — useful for collecting per-thread counters at the end of a workload.
 
-If you've used the Rust crate, the Kotlin API will feel identical (modulo `snake_case` → `camelCase`).
+If you've used the Rust crate, the Kotlin API should feel very familiar (modulo `snake_case` → `camelCase`).
 
 ## Why a port
 

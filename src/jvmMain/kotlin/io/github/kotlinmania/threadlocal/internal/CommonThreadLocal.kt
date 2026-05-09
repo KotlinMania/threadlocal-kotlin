@@ -4,12 +4,12 @@ import io.github.kotlinmania.threadlocal.Thread
 
 /**
  * On the JVM target, per-OS-thread storage is supplied by
- * `java.lang.ThreadLocal`. Each [CommonThreadLocal] wraps a single
+ * Kotlin/JVM `ThreadLocal`. Each [CommonThreadLocal] wraps a single
  * Java thread-local; reads and writes only ever touch the calling
  * thread's slot.
  */
 internal actual class CommonThreadLocal actual constructor(name: Symbol) {
-    private val backing: java.lang.ThreadLocal<Thread> = java.lang.ThreadLocal()
+    private val backing: ThreadLocal<Thread> = ThreadLocal()
 
     actual fun get(): Thread? = backing.get()
 
