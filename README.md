@@ -65,7 +65,7 @@ additional terms or conditions.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:threadlocal-kotlin:0.2.1")
+    implementation("io.github.kotlinmania:threadlocal-kotlin:0.3.0")
 }
 ```
 
