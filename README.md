@@ -75,11 +75,12 @@ See [`src/commonTest/`](src/commonTest/kotlin/io/github/kotlinmania/threadlocal/
 
 | Tier | Targets |
 |---|---|
+| JVM | `jvm` |
 | Native (Apple) | `macosArm64`, `macosX64`, `iosArm64`, `iosX64`, `iosSimulatorArm64` |
 | Native (Linux) | `linuxX64` |
 | Native (Windows) | `mingwX64` |
 
-CI verifies all native targets on every PR.
+CI verifies JVM and native targets on every PR.
 
 ## Building from source
 
