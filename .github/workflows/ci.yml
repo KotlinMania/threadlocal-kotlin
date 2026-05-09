@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 jobs:
   build-macos-arm64:
     name: Build and Test (macOS arm64 / iOS simulator arm64 / Swift)
