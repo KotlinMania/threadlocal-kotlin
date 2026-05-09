@@ -20,7 +20,6 @@ version = "0.2.1"
 val androidSdkDir: String? =
     providers.environmentVariable("ANDROID_SDK_ROOT").orNull
         ?: providers.environmentVariable("ANDROID_HOME").orNull
-        ?: rootProject.file(".android-sdk").takeIf { it.exists() }?.absolutePath
 
 if (androidSdkDir != null && file(androidSdkDir).exists()) {
     val localProperties = rootProject.file("local.properties")
@@ -32,6 +31,11 @@ if (androidSdkDir != null && file(androidSdkDir).exists()) {
 
 kotlin {
     applyDefaultHierarchyTemplate()
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+        languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi")
+    }
 
     compilerOptions {
         allWarningsAsErrors.set(true)
@@ -159,24 +163,13 @@ rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
 
 mavenPublishing {
     publishToMavenCentral()
-    val signingConfigured =
-        providers.gradleProperty("signingInMemoryKey").isPresent ||
-            providers.gradleProperty("signing.keyId").isPresent ||
-            providers.environmentVariable("SIGNING_KEY").isPresent
-    if (signingConfigured) {
-        signAllPublications()
-    }
+    signAllPublications()
 
     coordinates(group.toString(), "threadlocal-kotlin", version.toString())
 
     pom {
         name.set("threadlocal-kotlin")
-        description.set(
-            "Kotlin Multiplatform port of the Rust thread_local crate " +
-                "(Amanieu/thread_local-rs v1.1.9): per-object thread-local " +
-                "storage with O(1) lock-free reads, CAS-allocated buckets, " +
-                "and cross-thread iter()/iterMut()/intoIter()."
-        )
+        description.set("Kotlin Multiplatform port of Amanieu/thread_local-rs - Per-object thread-local storage")
         inceptionYear.set("2026")
         url.set("https://github.com/KotlinMania/threadlocal-kotlin")
 
@@ -184,11 +177,6 @@ mavenPublishing {
             license {
                 name.set("Apache-2.0")
                 url.set("https://opensource.org/licenses/Apache-2.0")
-                distribution.set("repo")
-            }
-            license {
-                name.set("MIT")
-                url.set("https://opensource.org/licenses/MIT")
                 distribution.set("repo")
             }
         }
@@ -208,4 +196,18 @@ mavenPublishing {
             developerConnection.set("scm:git:ssh://github.com/KotlinMania/threadlocal-kotlin.git")
         }
     }
+}
+
+tasks.register("test") {
+    group = "verification"
+    description =
+        "Runs a portable test suite (macOS + JS + WasmJS). Android and non-host native targets are intentionally excluded."
+
+    val defaultTestTasks = listOf(
+        "macosArm64Test",
+        "jsNodeTest",
+        "wasmJsNodeTest",
+    )
+
+    dependsOn(defaultTestTasks.mapNotNull { taskName -> tasks.findByName(taskName) })
 }
