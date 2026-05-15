@@ -20,7 +20,6 @@ This is an **in-progress port**. The goal is feature parity with the upstream Ru
 
 ## thread_local
 
-
 [![Build Status](https://github.com/Amanieu/thread_local-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/Amanieu/thread_local-rs/actions) [![crates.io](https://img.shields.io/crates/v/thread_local.svg)](https://crates.io/crates/thread_local)
 
 This library provides the `ThreadLocal` type which allow a separate copy of an
@@ -66,7 +65,7 @@ additional terms or conditions.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:threadlocal-kotlin:0.2.1")
+    implementation("io.github.kotlinmania:threadlocal-kotlin:0.3.0")
 }
 ```
 
@@ -79,6 +78,7 @@ dependencies {
 
 ### Targets
 
+- JVM (Java 8+)
 - macOS arm64
 - Linux x64
 - Windows mingw-x64
