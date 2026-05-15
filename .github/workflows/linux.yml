@@ -28,5 +28,6 @@ jobs:
       - name: Build and test Linux targets
         run: >
           ./gradlew
+          jvmTest
           linuxX64Test
           --no-configuration-cache
