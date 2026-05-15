@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.21"
-coroutines = "1.10.2"
+coroutines = "1.11.0"
 serialization = "1.8.0"
 datetime = "0.8.0"
 atomicfu = "0.32.1"
