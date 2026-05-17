@@ -2,7 +2,6 @@
 build/
 .gradle/
 .kotlin/
-local.properties
 *.class
 *.jar
 *.war
@@ -11,21 +10,40 @@ local.properties
 # Keep the Gradle wrapper jar checked in so CI can run `./gradlew`.
 !gradle/wrapper/gradle-wrapper.jar
 
-# IDE / editor files
+# IDE
 .idea/
 *.iml
-.vscode/
 out/
 
-# Node / JS / WASM working trees
+# Upstream Rust source — clone freshly when porting begins
+tmp/
+!tmp/.gitkeep
+
+# AST distance reports and binaries
+port_status_report.md
+high_priority_ports.md
+ast_distance_*.txt
+.cache/
+*.lock
 kotlin-js-store/*
+!kotlin-js-store/package.json
 !kotlin-js-store/yarn.lock
 !kotlin-js-store/wasm/
 !kotlin-js-store/wasm/yarn.lock
-.cache/
+tools/ast_distance/ast_distance
+tools/ast_distance/build/
 
-# Local working copy of the upstream Rust crate (reference only — never tracked).
-tmp/
+# JVM heap dumps
+*.hprof
+java_pid*.hprof
 
-# OS cruft
+# macOS Finder metadata
 .DS_Store
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Android SDK
+/.android-sdk/
+local.properties
