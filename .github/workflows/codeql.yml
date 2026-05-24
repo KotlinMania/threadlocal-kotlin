@@ -21,20 +21,22 @@ name: "CodeQL Advanced"
 #      JAVA_TOOL_OPTIONS=-javaagent:codeql-java-agent.jar=java,kotlin.
 #
 # `codeqlCompileJvm` is a JavaExec task in build.gradle.kts that runs
-# kotlin-compiler-embeddable 2.3.21 against commonMain plus the JVM
-# actual source set as a single JVM compile. The CodeQL Java agent is
-# attached to the JVM running that compiler, so Kotlin extraction does
-# not depend on Gradle's multiplatform task pipeline. Using autobuild
-# here (the template's default for java-kotlin) would route through
-# generic Gradle defaults that do not know this KMP repo's extraction
-# shape. That's why this file uses `build-mode: manual` for java-kotlin
-# even though autobuild is the template default.
+# kotlin-compiler-embeddable 2.3.21 against commonMain as a single-target
+# compile (no -Xmulti-platform, no -Xfragments). The K2 phased pipeline
+# that bypasses K2JVMCompiler.doExecute — which the CodeQL Java agent
+# hooks for Kotlin extraction — is only engaged for multiplatform-fragment
+# compiles, so a single-target invocation still dispatches through
+# doExecute and the agent's class-load hook fires. Using autobuild here
+# (the template's default for java-kotlin) would route through KGP's
+# multiplatform compileKotlinJvm and produce 0 bytes of Kotlin TRAP.
+# That's why this file uses `build-mode: manual` for java-kotlin even
+# though autobuild is the template default.
 
 on:
   schedule:
-    - cron: "0 7 * * 1"
-  workflow_dispatch:
+    - cron: '44 16 * * 0'
 
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -91,19 +93,19 @@ jobs:
           dependency-caching: true
 
       # Manual build: only java-kotlin gates this. The CodeQL Java agent
-      # is attached to every JVM in this step via JAVA_TOOL_OPTIONS —
-      # every conforming JVM honors -javaagent at startup independently
-      # of any OS-level LD_PRELOAD tracing chain. The `java,kotlin` spec
-      # registers both JavacMainInterceptor and KotlinInterceptor; the
-      # latter hooks `K2JVMCompiler.doExecute(...)` at class load time
-      # and writes per-source-file `*.kt.trap.gz` outputs under
+      # is attached to every JVM in this step via JAVA_TOOL_OPTIONS — every
+      # conforming JVM honors -javaagent at startup independently of any
+      # OS-level LD_PRELOAD tracing chain. The `java,kotlin` spec registers
+      # both JavacMainInterceptor and KotlinInterceptor; the latter hooks
+      # `K2JVMCompiler.doExecute(...)` at class load time and writes
+      # per-source-file `*.kt.trap.gz` outputs under
       # ${CODEQL_EXTRACTOR_JAVA_TRAP_DIR}.
       - name: Run manual build steps
         if: matrix.build-mode == 'manual'
         run: |
           export JAVA_TOOL_OPTIONS="-javaagent:${CODEQL_EXTRACTOR_JAVA_ROOT}/tools/codeql-java-agent.jar=java,kotlin"
           echo "JAVA_TOOL_OPTIONS=${JAVA_TOOL_OPTIONS}"
-          ./gradlew --no-daemon codeqlCompileJvm --no-configuration-cache
+          ./gradlew --no-daemon setupAndroidSdk codeqlCompileJvm --no-configuration-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
