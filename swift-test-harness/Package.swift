@@ -1,6 +1,17 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
+// The `macosArm64` path segment below is intentional, not a host-arch bug.
+// Kotlin/Native's `macosX64` target is deprecated upstream (the JetBrains
+// 2.x line emits a deprecation warning whenever the target is configured),
+// and the Swift Export pipeline's canonical macOS slice is `macosArm64`.
+// The CI workflow at `.github/workflows/swift.yml` runs on `macos-26` (an
+// Apple-Silicon image) and pins `ARCHS: arm64`, so the embed task always
+// lands its SPM package under `build/SPMPackage/macosArm64/Debug`. Local
+// `swift test` runs against this harness therefore require an Apple-Silicon
+// host; there is no plan to add an `macosX64` fallback or an arch-agnostic
+// alias since that would re-introduce a deprecated build dimension just to
+// rename a path.
 let package = Package(
     name: "SwiftTestHarness",
     dependencies: [
