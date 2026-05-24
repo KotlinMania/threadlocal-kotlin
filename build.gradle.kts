@@ -200,6 +200,17 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
+    // Swift Export generates bridge code with unchecked casts for generic classes.
+    // This is a known limitation described in SWIFT_EXPORT_ROLLOUT.md Gap 8a.
+    // We allow warnings (not treat them as errors) only for Swift Export compilation tasks.
+    tasks.matching { it.name.contains("SwiftExport", ignoreCase = true) }.configureEach {
+        if (this is org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>) {
+            compilerOptions {
+                allWarningsAsErrors.set(false)
+            }
+        }
+    }
+
     val xcf = XCFramework("ThreadLocalKotlin")
 
     macosArm64 {

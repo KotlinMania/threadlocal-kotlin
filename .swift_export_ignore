@@ -1,0 +1,9 @@
+# Swift Export Ignore List
+# Classes listed here will be excluded from unchecked cast detection
+# See SWIFT_EXPORT_ROLLOUT.md for details on Gap 8a
+
+io.github.kotlinmania.threadlocal.ThreadLocal
+io.github.kotlinmania.threadlocal.CachedThreadLocal
+io.github.kotlinmania.threadlocal.TryResult
+io.github.kotlinmania.threadlocal.TryFactory
+io.github.kotlinmania.threadlocal.ValueFactory

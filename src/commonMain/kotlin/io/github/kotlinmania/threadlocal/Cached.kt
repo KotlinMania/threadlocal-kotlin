@@ -19,14 +19,14 @@ public class CachedThreadLocal<T : Any> {
      * Returns the element for the current thread, or creates it if it
      * doesn't exist.
      */
-    public fun getOr(create: () -> T): T = inner.getOr(create)
+    public fun getOr(create: ValueFactory<T>): T = inner.getOr(create)
 
     /**
      * Returns the element for the current thread, or creates it if it
      * doesn't exist. If [create] fails, that error is returned and no
      * element is added.
      */
-    public fun getOrTry(create: () -> Result<T>): Result<T> = inner.getOrTry(create)
+    public fun getOrTry(create: TryFactory<T>): TryResult<T> = inner.getOrTry(create)
 
     /**
      * Returns a mutable iterator over the local values of all threads.
@@ -36,7 +36,7 @@ public class CachedThreadLocal<T : Any> {
      * guarantees no other threads are currently accessing their
      * associated values.
      */
-    public fun iterMut(): CachedIterMut<T> = CachedIterMut(inner.iterMut())
+    public fun iterMut(): Iterator<T> = inner.iterMut()
 
     /**
      * Removes all thread-specific values from the [CachedThreadLocal],
@@ -52,43 +52,13 @@ public class CachedThreadLocal<T : Any> {
     }
 
     /** Returns an iterator that moves out of the [CachedThreadLocal]. */
-    public fun intoIter(): CachedIntoIter<T> = CachedIntoIter(inner.intoIter())
+    public fun intoIter(): Iterator<T> = inner.intoIter()
 
     /**
      * Returns the element for the current thread, or creates a default
      * one if it doesn't exist.
      */
-    public fun getOrDefault(default: () -> T): T = getOr(default)
+    public fun getOrDefault(default: ValueFactory<T>): T = getOr(default)
 
     override fun toString(): String = "ThreadLocal { local_data: ${get()} }"
-}
-
-/**
- * Mutable iterator over the contents of a [CachedThreadLocal].
- *
- * Deprecated since the upstream 1.1.0 release. Use [IterMut] instead.
- */
-public class CachedIterMut<T : Any> internal constructor(
-    private val inner: IterMut<T>,
-) : Iterator<T> {
-    override fun hasNext(): Boolean = inner.hasNext()
-
-    override fun next(): T = inner.next()
-
-    public fun sizeHint(): Pair<Int, Int?> = inner.sizeHint()
-}
-
-/**
- * An iterator that moves out of a [CachedThreadLocal].
- *
- * Deprecated since the upstream 1.1.0 release. Use [IntoIter] instead.
- */
-public class CachedIntoIter<T : Any> internal constructor(
-    private val inner: IntoIter<T>,
-) : Iterator<T> {
-    override fun hasNext(): Boolean = inner.hasNext()
-
-    override fun next(): T = inner.next()
-
-    public fun sizeHint(): Pair<Int, Int?> = inner.sizeHint()
 }
