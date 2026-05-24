@@ -209,10 +209,18 @@ kotlin {
         binaries.framework { baseName = "ThreadLocalKotlin"; xcf.add(this) }
     }
     iosSimulatorArm64 {
-        binaries.framework { baseName = "ThreadLocalKotlin"; xcf.add(this) }
+        binaries.framework {
+            baseName = "ThreadLocalKotlin"
+            isStatic = true
+            xcf.add(this)
+        }
     }
     iosX64 {
-        binaries.framework { baseName = "ThreadLocalKotlin"; xcf.add(this) }
+        binaries.framework {
+            baseName = "ThreadLocalKotlin"
+            isStatic = true
+            xcf.add(this)
+        }
     }
 
     tvosArm64 {
