@@ -43,6 +43,85 @@ import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.atomicArrayOfNulls
 
+/**
+ * Factory function that creates a value of type [T].
+ *
+ * Single-abstract-method interface that stands in for `() -> T` function type.
+ * Named so Swift Export can bridge a nominal symbol instead of an erased `Function0<T>`.
+ */
+public fun interface ValueFactory<T> {
+    fun create(): T
+}
+
+/**
+ * Factory function that attempts to create a value of type [T], returning
+ * a [TryResult] indicating success or failure.
+ *
+ * Single-abstract-method interface that stands in for `() -> TryResult<T>` function type.
+ * Named so Swift Export can bridge a nominal symbol instead of an erased `Function0<TryResult<T>>`.
+ */
+public fun interface TryFactory<T> {
+    fun tryCreate(): TryResult<T>
+}
+
+/**
+ * Result of an operation that may succeed with a value or fail with an error message.
+ *
+ * Flat-class shape (rather than sealed Ok / Err variants) — the Kotlin Swift Export
+ * plugin does not currently emit Swift bindings that let consumers pattern-match on
+ * sealed subclasses. A flat class with [isSuccess] / [isFailure] predicates and
+ * nullable [value] / [errorMessage] accessors bridges cleanly to Swift, where the
+ * consumer uses `if result.isSuccess() { result.value?.use() }`.
+ *
+ * The class invariant — exactly one of [value] / [errorMessage] is non-null — is
+ * enforced at construction by [init]. That makes the otherwise unreachable branch
+ * in [getOrThrow] expressible without `!!`.
+ */
+public class TryResult<T>(
+    val value: T?,
+    val errorMessage: String?,
+) {
+    init {
+        require((value == null) != (errorMessage == null)) {
+            "TryResult must carry exactly one of value or errorMessage (got value=$value, errorMessage=$errorMessage)"
+        }
+    }
+
+    /**
+     * Returns the success value or throws an exception with the error message.
+     */
+    public fun getOrThrow(): T = when {
+        value != null -> value
+        errorMessage != null -> throw IllegalStateException(errorMessage)
+        else -> error("TryResult class invariant violated: both value and errorMessage are null")
+    }
+
+    /**
+     * Returns the success value or null if this is a failure.
+     */
+    public fun getOrNull(): T? = value
+
+    /**
+     * Returns true if this result is a success.
+     */
+    public fun isSuccess(): Boolean = value != null
+
+    /**
+     * Returns true if this result is a failure.
+     */
+    public fun isFailure(): Boolean = errorMessage != null
+
+    /**
+     * Maps the success value using [transform], leaving failures unchanged.
+     */
+    internal fun <R> map(transform: (T) -> R): TryResult<R> = when {
+        value != null -> TryResult(transform(value), null)
+        errorMessage != null -> TryResult(null, errorMessage)
+        else -> error("TryResult class invariant violated: both value and errorMessage are null")
+    }
+}
+
+
 internal class Entry<T : Any> {
     val present: AtomicBoolean = atomic(false)
     val value: AtomicRef<T?> = atomic(null)
@@ -88,11 +167,11 @@ public class ThreadLocal<T : Any> {
      * Returns the element for the current thread, or creates it if it
      * doesn't exist.
      */
-    public fun getOr(create: () -> T): T {
+    public fun getOr(create: ValueFactory<T>): T {
         val thread = currentThread()
         val existing = getInner(thread)
         if (existing != null) return existing
-        return insert(thread, create())
+        return insert(thread, create.create())
     }
 
     /**
@@ -100,11 +179,11 @@ public class ThreadLocal<T : Any> {
      * doesn't exist. If [create] fails, that error is returned and no
      * element is added.
      */
-    public fun getOrTry(create: () -> Result<T>): Result<T> {
+    public fun getOrTry(create: TryFactory<T>): TryResult<T> {
         val thread = currentThread()
         val existing = getInner(thread)
-        if (existing != null) return Result.success(existing)
-        return create().map { data -> insert(thread, data) }
+        if (existing != null) return TryResult(existing, null)
+        return create.tryCreate().map { data -> insert(thread, data) }
     }
 
     private fun getInner(thread: Thread): T? {
@@ -149,13 +228,13 @@ public class ThreadLocal<T : Any> {
      * trait, so the caller supplies the default factory; semantically
      * this is identical to [getOr] and exists for upstream API parity.
      */
-    public fun getOrDefault(default: () -> T): T = getOr(default)
+    public fun getOrDefault(default: ValueFactory<T>): T = getOr(default)
 
     /**
      * Returns an iterator over the local values of all threads in
      * unspecified order.
      */
-    public fun iter(): Iter<T> = Iter(this)
+    public fun iter(): Iterator<T> = Iter(this)
 
     /**
      * Returns a mutable iterator over the local values of all threads
@@ -163,7 +242,7 @@ public class ThreadLocal<T : Any> {
      * inherently mutable, this is equivalent to [iter] and is
      * provided for API symmetry with the upstream Rust crate.
      */
-    public fun iterMut(): IterMut<T> = IterMut(this)
+    public fun iterMut(): Iterator<T> = IterMut(this)
 
     /**
      * Returns an iterator that drains the local values of all threads
@@ -171,7 +250,7 @@ public class ThreadLocal<T : Any> {
      * `IntoIter`; Kotlin has no move, so this method detaches the
      * buckets immediately and leaves this [ThreadLocal] empty.
      */
-    public fun intoIter(): IntoIter<T> = IntoIter(this)
+    public fun intoIter(): Iterator<T> = IntoIter(this)
 
     /**
      * Removes all thread-specific values from the [ThreadLocal],
@@ -192,8 +271,12 @@ public class ThreadLocal<T : Any> {
          * less than the capacity threads access the thread local it
          * will never reallocate. The capacity may be rounded up to
          * the nearest power of two.
+         *
+         * Note: This method is internal because Swift Export cannot
+         * infer the generic type parameter. Swift consumers should use
+         * the `ThreadLocal(capacity: Int32)` constructor directly.
          */
-        public fun <T : Any> withCapacity(capacity: Int): ThreadLocal<T> = ThreadLocal(capacity)
+        internal fun <T : Any> withCapacity(capacity: Int): ThreadLocal<T> = ThreadLocal(capacity)
     }
 }
 
@@ -273,7 +356,7 @@ internal class RawIter {
 }
 
 /** Iterator over the contents of a [ThreadLocal]. */
-public class Iter<T : Any> internal constructor(
+internal class Iter<T : Any> internal constructor(
     private val threadLocal: ThreadLocal<T>,
 ) : Iterator<T> {
     private val raw: RawIter = RawIter()
@@ -298,7 +381,7 @@ public class Iter<T : Any> internal constructor(
 }
 
 /** Mutable iterator over the contents of a [ThreadLocal]. */
-public class IterMut<T : Any> internal constructor(
+internal class IterMut<T : Any> internal constructor(
     private val threadLocal: ThreadLocal<T>,
 ) : Iterator<T> {
     private val raw: RawIter = RawIter()
@@ -330,7 +413,7 @@ public class IterMut<T : Any> internal constructor(
 }
 
 /** An iterator that moves out of a [ThreadLocal]. */
-public class IntoIter<T : Any> internal constructor(
+internal class IntoIter<T : Any> internal constructor(
     threadLocal: ThreadLocal<T>,
 ) : Iterator<T> {
     private val buckets: Array<Array<Entry<T>>?>
