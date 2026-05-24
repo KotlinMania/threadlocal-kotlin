@@ -271,6 +271,11 @@ kotlin {
         flattenPackage = "io.github.kotlinmania.threadlocal"
     }
 
+    swiftExport {
+        moduleName = "ThreadLocalKotlin"
+        flattenPackage = "io.github.kotlinmania.threadlocal"
+    }
+
     android {
         namespace = "io.github.kotlinmania.threadlocal"
         compileSdk = 34
