@@ -33,14 +33,10 @@ name: "CodeQL Advanced"
 # though autobuild is the template default.
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  # Weekly periodic scan catches supply-chain CVEs that appear after merge.
   schedule:
     - cron: '44 16 * * 0'
 
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -109,7 +105,7 @@ jobs:
         run: |
           export JAVA_TOOL_OPTIONS="-javaagent:${CODEQL_EXTRACTOR_JAVA_ROOT}/tools/codeql-java-agent.jar=java,kotlin"
           echo "JAVA_TOOL_OPTIONS=${JAVA_TOOL_OPTIONS}"
-          ./gradlew --no-daemon codeqlCompileJvm --no-configuration-cache
+          ./gradlew --no-daemon setupAndroidSdk codeqlCompileJvm --no-configuration-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
