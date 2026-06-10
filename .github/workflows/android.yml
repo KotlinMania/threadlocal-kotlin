@@ -32,4 +32,5 @@ jobs:
           compileAndroidMain
           assembleUnitTest
           assembleAndroidTest
+          testAndroidHostTest
           --no-configuration-cache
