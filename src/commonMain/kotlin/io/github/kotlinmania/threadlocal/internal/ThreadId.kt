@@ -15,24 +15,26 @@ internal class ThreadIdManager : SynchronizedObject() {
     private var freeFrom: Int = 0
     private var freeList: MinHeap? = null
 
-    fun alloc(): Int = synchronized(this) {
-        val recycled = freeList?.pop()
-        if (recycled != null) {
-            recycled
-        } else {
-            // `freeFrom` can't overflow as each thread takes up at
-            // least 2 bytes of memory and thus we can't even have
-            // `Int.MAX_VALUE / 2 + 1` threads.
-            val id = freeFrom
-            freeFrom += 1
-            id
+    fun alloc(): Int =
+        synchronized(this) {
+            val recycled = freeList?.pop()
+            if (recycled != null) {
+                recycled
+            } else {
+                // `freeFrom` can't overflow as each thread takes up at
+                // least 2 bytes of memory and thus we can't even have
+                // `Int.MAX_VALUE / 2 + 1` threads.
+                val id = freeFrom
+                freeFrom += 1
+                id
+            }
         }
-    }
 
-    fun free(id: Int): Unit = synchronized(this) {
-        val list = freeList ?: MinHeap().also { freeList = it }
-        list.push(id)
-    }
+    fun free(id: Int): Unit =
+        synchronized(this) {
+            val list = freeList ?: MinHeap().also { freeList = it }
+            list.push(id)
+        }
 }
 
 internal val THREAD_ID_MANAGER: ThreadIdManager = ThreadIdManager()

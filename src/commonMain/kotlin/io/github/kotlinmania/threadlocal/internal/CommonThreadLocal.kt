@@ -9,8 +9,11 @@ import io.github.kotlinmania.threadlocal.Thread
  * `CommonThreadLocal` shape, narrowed to [Thread] so the Native
  * actual does not need unchecked casts.
  */
-internal expect class CommonThreadLocal(name: Symbol) {
+internal expect class CommonThreadLocal(
+    name: Symbol,
+) {
     fun get(): Thread?
+
     fun set(value: Thread?)
 }
 

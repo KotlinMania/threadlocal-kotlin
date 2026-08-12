@@ -36,12 +36,10 @@
 package io.github.kotlinmania.threadlocal
 
 import io.github.kotlinmania.threadlocal.internal.currentThread
-import kotlinx.atomicfu.AtomicArray
 import kotlinx.atomicfu.AtomicBoolean
 import kotlinx.atomicfu.AtomicInt
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.atomicArrayOfNulls
 
 /**
  * Factory function that creates a value of type [T].
@@ -90,11 +88,12 @@ public class TryResult<T>(
     /**
      * Returns the success value or throws an exception with the error message.
      */
-    public fun getOrThrow(): T = when {
-        value != null -> value
-        errorMessage != null -> throw IllegalStateException(errorMessage)
-        else -> error("TryResult class invariant violated: both value and errorMessage are null")
-    }
+    public fun getOrThrow(): T =
+        when {
+            value != null -> value
+            errorMessage != null -> throw IllegalStateException(errorMessage)
+            else -> error("TryResult class invariant violated: both value and errorMessage are null")
+        }
 
     /**
      * Returns the success value or null if this is a failure.
@@ -114,17 +113,21 @@ public class TryResult<T>(
     /**
      * Maps the success value using [transform], leaving failures unchanged.
      */
-    internal fun <R> map(transform: (T) -> R): TryResult<R> = when {
-        value != null -> TryResult(transform(value), null)
-        errorMessage != null -> TryResult(null, errorMessage)
-        else -> error("TryResult class invariant violated: both value and errorMessage are null")
-    }
+    internal fun <R> map(transform: (T) -> R): TryResult<R> =
+        when {
+            value != null -> TryResult(transform(value), null)
+            errorMessage != null -> TryResult(null, errorMessage)
+            else -> error("TryResult class invariant violated: both value and errorMessage are null")
+        }
 }
-
 
 internal class Entry<T : Any> {
     val present: AtomicBoolean = atomic(false)
     val value: AtomicRef<T?> = atomic(null)
+}
+
+internal class AtomicBucket<T> {
+    val ref: AtomicRef<T?> = atomic(null)
 }
 
 /**
@@ -136,7 +139,7 @@ public class ThreadLocal<T : Any> {
      * The buckets in the thread local. The nth bucket contains `2^n`
      * elements. Each bucket is lazily allocated.
      */
-    internal val buckets: AtomicArray<Array<Entry<T>>?> = atomicArrayOfNulls(BUCKETS)
+    internal val buckets: Array<AtomicBucket<Array<Entry<T>>?>> = Array(BUCKETS) { AtomicBucket() }
 
     /**
      * The number of values in the thread local. This can be less than
@@ -156,7 +159,7 @@ public class ThreadLocal<T : Any> {
     public constructor(capacity: Int) {
         val allocatedBuckets = POINTER_WIDTH - capacity.countLeadingZeroBits()
         for (i in 0 until allocatedBuckets) {
-            buckets[i].value = allocateBucket(1 shl i)
+            buckets[i].ref.value = allocateBucket(1 shl i)
         }
     }
 
@@ -187,26 +190,27 @@ public class ThreadLocal<T : Any> {
     }
 
     private fun getInner(thread: Thread): T? {
-        val bucket = buckets[thread.bucket].value ?: return null
+        val bucket = buckets[thread.bucket].ref.value ?: return null
         val entry = bucket[thread.index]
         return if (entry.present.value) entry.value.value else null
     }
 
     internal fun insert(thread: Thread, data: T): T {
-        val bucketAtomic = buckets[thread.bucket]
+        val bucketAtomic = buckets[thread.bucket].ref
         var bucketArr = bucketAtomic.value
 
         // If the bucket doesn't already exist, we need to allocate it.
         if (bucketArr == null) {
             val newBucket = allocateBucket<T>(thread.bucketSize)
-            bucketArr = if (bucketAtomic.compareAndSet(null, newBucket)) {
-                newBucket
-            } else {
-                // If the bucket value changed (from null), that means
-                // another thread stored a new bucket before we could,
-                // and we can drop our bucket and use that one instead.
-                bucketAtomic.value!!
-            }
+            bucketArr =
+                if (bucketAtomic.compareAndSet(null, newBucket)) {
+                    newBucket
+                } else {
+                    // If the bucket value changed (from null), that means
+                    // another thread stored a new bucket before we could,
+                    // and we can drop our bucket and use that one instead.
+                    bucketAtomic.value!!
+                }
         }
 
         // Insert the new element into the bucket.
@@ -258,7 +262,7 @@ public class ThreadLocal<T : Any> {
      */
     public fun clear() {
         for (i in 0 until BUCKETS) {
-            buckets[i].value = null
+            buckets[i].ref.value = null
         }
         values.value = 0
     }
@@ -299,7 +303,7 @@ internal class RawIter {
 
     fun <T : Any> next(threadLocal: ThreadLocal<T>): T? {
         while (bucket < BUCKETS) {
-            val bucketArr = threadLocal.buckets[bucket].value
+            val bucketArr = threadLocal.buckets[bucket].ref.value
             if (bucketArr != null) {
                 while (index < bucketSize) {
                     val entry = bucketArr[index]
@@ -318,7 +322,7 @@ internal class RawIter {
     fun <T : Any> nextEntry(threadLocal: ThreadLocal<T>): Entry<T>? {
         if (threadLocal.values.value == yielded) return null
         while (bucket < BUCKETS) {
-            val bucketArr = threadLocal.buckets[bucket].value
+            val bucketArr = threadLocal.buckets[bucket].ref.value
             if (bucketArr != null) {
                 while (index < bucketSize) {
                     val entry = bucketArr[index]
@@ -426,11 +430,12 @@ internal class IntoIter<T : Any> internal constructor(
 
     init {
         total = threadLocal.values.value
-        buckets = Array(BUCKETS) { i ->
-            val bucketArr = threadLocal.buckets[i].value
-            threadLocal.buckets[i].value = null
-            bucketArr
-        }
+        buckets =
+            Array(BUCKETS) { i ->
+                val bucketArr = threadLocal.buckets[i].ref.value
+                threadLocal.buckets[i].ref.value = null
+                bucketArr
+            }
         threadLocal.values.value = 0
     }
 

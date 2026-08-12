@@ -8,7 +8,9 @@ import io.github.kotlinmania.threadlocal.Thread
  * map. [CommonThreadLocal] still routes through it by [Symbol] so the
  * call surface stays consistent with the multithreaded actuals.
  */
-internal actual class CommonThreadLocal actual constructor(private val name: Symbol) {
+internal actual class CommonThreadLocal actual constructor(
+    private val name: Symbol,
+) {
     actual fun get(): Thread? = storage[name]
 
     actual fun set(value: Thread?) {
