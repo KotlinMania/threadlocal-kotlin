@@ -1,17 +1,19 @@
 // Translated from upstream thread_local-1.1.9/src/lib.rs (#[cfg(test)] mod tests)
 package io.github.kotlinmania.threadlocal
 
-import kotlinx.atomicfu.AtomicInt
-import kotlinx.atomicfu.atomic
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+private class Counter {
+    val value: kotlinx.atomicfu.AtomicInt = kotlinx.atomicfu.atomic(0)
+}
+
 class ThreadLocalTest {
     private fun makeCreate(): () -> Int {
-        val count = atomic(0)
-        return { count.getAndIncrement() }
+        val count = Counter()
+        return { count.value.getAndIncrement() }
     }
 
     @Test
@@ -44,16 +46,18 @@ class ThreadLocalTest {
         // resolves `local`'s `T` from the later `local.get_or(|| Dropped(..))`
         // call. Kotlin's inference is lexical, so the local class must
         // appear before the `ThreadLocal<Dropped>()` site.
-        class Dropped(val counter: AtomicInt) {
+        class Dropped(
+            val counter: Counter,
+        ) {
             fun observe() {
-                counter.incrementAndGet()
+                counter.value.incrementAndGet()
             }
         }
 
         val local = ThreadLocal<Dropped>()
-        val dropped = atomic(0)
+        val dropped = Counter()
         local.getOr { Dropped(dropped) }
-        assertEquals(0, dropped.value)
+        assertEquals(0, dropped.value.value)
 
         var visited = 0
         for (entry in local.intoIter()) {
@@ -61,15 +65,17 @@ class ThreadLocalTest {
             visited += 1
         }
         assertEquals(1, visited)
-        assertEquals(1, dropped.value)
+        assertEquals(1, dropped.value.value)
         assertNull(local.get())
     }
 
     @Test
     fun testEarlyreturnBuckets() {
-        class Dropped(val counter: AtomicInt) {
+        class Dropped(
+            val counter: Counter,
+        ) {
             fun observe() {
-                counter.incrementAndGet()
+                counter.value.incrementAndGet()
             }
         }
 
@@ -80,20 +86,20 @@ class ThreadLocalTest {
         val thread = Thread.new(1234)
         assertTrue(thread.bucket > 1)
 
-        val dropped = atomic(0)
+        val dropped = Counter()
         val local = ThreadLocal<Dropped>()
         local.insert(thread, Dropped(dropped))
 
         val first = local.iter().asSequence().first()
-        assertEquals(0, first.counter.value)
+        assertEquals(0, first.counter.value.value)
 
         val firstMut = local.iterMut().asSequence().first()
-        assertEquals(0, firstMut.counter.value)
+        assertEquals(0, firstMut.counter.value.value)
 
         for (entry in local.intoIter()) {
             entry.observe()
         }
-        assertEquals(1, dropped.value)
+        assertEquals(1, dropped.value.value)
     }
 
     @Test

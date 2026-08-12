@@ -13,7 +13,9 @@ import io.github.kotlinmania.threadlocal.Thread
  * implementation is not duplicated between the two JVM-bytecode
  * artifacts.
  */
-internal actual class CommonThreadLocal actual constructor(name: Symbol) {
+internal actual class CommonThreadLocal actual constructor(
+    name: Symbol,
+) {
     private val backing: ThreadLocal<Thread> = ThreadLocal()
 
     actual fun get(): Thread? = backing.get()

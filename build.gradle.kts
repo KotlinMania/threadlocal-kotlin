@@ -40,6 +40,7 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kotlinx.benchmark)
     alias(libs.plugins.kotlin.allopen)
+    alias(libs.plugins.kotlinx.atomicfu)
     `maven-publish`
     signing
 }
@@ -492,6 +493,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(commonMainDependencyBundle)
+            implementation(libs.kotlinx.atomicfu)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

@@ -12,7 +12,9 @@ import kotlin.native.concurrent.ThreadLocal
  * `CommonThreadLocal`; this port stores only [Thread] records, so the
  * map is typed and needs no unchecked cast.
  */
-internal actual class CommonThreadLocal actual constructor(private val name: Symbol) {
+internal actual class CommonThreadLocal actual constructor(
+    private val name: Symbol,
+) {
     actual fun get(): Thread? = Storage[name]
 
     actual fun set(value: Thread?) {
