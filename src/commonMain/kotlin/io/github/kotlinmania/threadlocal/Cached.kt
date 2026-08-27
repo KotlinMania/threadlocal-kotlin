@@ -1,4 +1,4 @@
-// Translated from upstream thread_local-1.1.9/src/cached.rs
+// port-lint: source cached.rs
 package io.github.kotlinmania.threadlocal
 
 /**

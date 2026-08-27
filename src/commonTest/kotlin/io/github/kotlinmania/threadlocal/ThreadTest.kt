@@ -1,4 +1,4 @@
-// Translated from upstream thread_local-1.1.9/src/thread_id.rs (#[cfg(test)] mod tests)
+// port-lint: tests thread_id.rs
 package io.github.kotlinmania.threadlocal
 
 import kotlin.test.Test

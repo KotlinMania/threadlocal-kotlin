@@ -1,4 +1,4 @@
-// Translated from upstream thread_local-1.1.9/src/thread_id.rs
+// port-lint: source thread_id.rs
 package io.github.kotlinmania.threadlocal.internal
 
 import io.github.kotlinmania.threadlocal.Thread

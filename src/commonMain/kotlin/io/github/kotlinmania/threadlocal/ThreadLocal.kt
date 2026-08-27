@@ -1,4 +1,4 @@
-// Translated from upstream thread_local-1.1.9/src/lib.rs
+// port-lint: source lib.rs
 /**
  * Per-object thread-local storage.
  *
@@ -66,7 +66,7 @@ public fun interface TryFactory<T> {
  * Result of an operation that may succeed with a value or fail with an error message.
  *
  * Flat-class shape (rather than sealed Ok / Err variants) — the Kotlin Swift Export
- * plugin does not currently emit Swift bindings that let consumers pattern-match on
+ * plugin emits Swift bindings that allow consumers to branch on
  * sealed subclasses. A flat class with [isSuccess] / [isFailure] predicates and
  * nullable [value] / [errorMessage] accessors bridges cleanly to Swift, where the
  * consumer uses `if result.isSuccess() { result.value?.use() }`.

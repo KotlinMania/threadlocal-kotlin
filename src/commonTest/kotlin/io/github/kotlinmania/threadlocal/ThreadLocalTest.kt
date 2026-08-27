@@ -1,4 +1,4 @@
-// Translated from upstream thread_local-1.1.9/src/lib.rs (#[cfg(test)] mod tests)
+// port-lint: tests lib.rs
 package io.github.kotlinmania.threadlocal
 
 import kotlin.test.Test
@@ -35,17 +35,9 @@ class ThreadLocalTest {
 
     @Test
     fun testDrop() {
-        // Rust's `test_drop` exercises that dropping the `ThreadLocal`
-        // runs the `Drop` impl on each entry. Kotlin is GC-managed and
-        // does not have deterministic drop, so the closest faithful
-        // assertion is that draining via `intoIter` visits every
-        // entry exactly once and removes it from the [ThreadLocal].
-        //
-        // Note on ordering: upstream Rust declares `let local` before
-        // `struct Dropped` because Rust's whole-function type inference
-        // resolves `local`'s `T` from the later `local.get_or(|| Dropped(..))`
-        // call. Kotlin's inference is lexical, so the local class must
-        // appear before the `ThreadLocal<Dropped>()` site.
+        // Kotlin is GC-managed and does not have deterministic drop, so the
+        // closest faithful assertion is that draining via intoIter visits every
+        // entry exactly once and removes it from the ThreadLocal.
         class Dropped(
             val counter: Counter,
         ) {
@@ -114,14 +106,7 @@ class ThreadLocalTest {
 
     @Test
     fun isSync() {
-        // Rust's `is_sync` is a compile-time check that
-        // `ThreadLocal<String>` implements the `Sync` trait. Kotlin
-        // has no equivalent marker trait — values shared between
-        // threads are managed by the GC and the lock-free bucket
-        // structure built on top of atomicfu provides the same
-        // guarantees Rust's `Sync` would. The runtime equivalent of
-        // this test is simply that the type exists and can be
-        // instantiated.
+        // Compile-time check that ThreadLocal<String> can be instantiated and used.
         val local: ThreadLocal<String> = ThreadLocal()
         assertNull(local.get())
     }
