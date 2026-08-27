@@ -1,14 +1,14 @@
 [versions]
-kotlin = "2.4.10"
+kotlin = "2.4.0"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
-collectionsImmutable = "0.5.1"
-androidKmp = "9.3.1"
+collectionsImmutable = "0.5.0"
+androidKmp = "9.2.1"
 detekt = "1.23.8"
 ktlint = "14.2.0"
 kotlinxBenchmark = "0.4.17"
-atomicfu = "0.33.0"
+atomicfu = "0.27.0"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -18,7 +18,6 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinxBenchmark" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
-kotlinx-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -36,4 +35,5 @@ threadlocal-kotlin-commonMain = [
   "kotlinx-serialization-json",
   "kotlinx-datetime",
   "collections-immutable",
+  "kotlinx-atomicfu",
 ]
