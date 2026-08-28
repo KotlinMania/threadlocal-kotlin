@@ -1,6 +1,6 @@
 # port-lint Proposed Changes
 
-**Generated:** 2026-08-27
+**Generated:** 2026-08-28
 **Source:** tmp/thread_local-1.1.9/src
 **Target:** src/commonMain/kotlin/io/github/kotlinmania/threadlocal
 
