@@ -3,10 +3,6 @@
 # upstream source code; many structural/style rules that make sense for
 # idiomatic Kotlin would create false positives here.
 
-build:
-  maxIssues: 100
-  excludeCorrectable: false
-
 config:
   validation: true
 
@@ -33,7 +29,7 @@ style:
   MagicNumber: { active: false }
   NewLineAtEndOfFile: { active: true }
   ReturnCount: { active: false }
-  UnusedImports: { active: true }
+  UnusedImport: { active: true }
   UnnecessaryInheritance: { active: true }
   UtilityClassWithPublicConstructor: { active: true }
   DestructuringDeclarationWithTooManyEntries: { active: true, maxDestructuringEntries: 3 }
@@ -49,8 +45,7 @@ style:
   WildcardImport: { active: false }
   ModifierOrder: { active: false }
   UnusedPrivateProperty: { active: false }
-  RedundantVisibilityModifierRule: { active: false }
-  UnnecessaryAbstractClass: { active: false }
+  RedundantVisibilityModifier: { active: false }
 
 complexity:
   active: true
@@ -73,7 +68,6 @@ empty-blocks:
   EmptyFunctionBlock: { active: false }
   EmptyIfBlock: { active: false }
   EmptyInitBlock: { active: true }
-  EmptyKtFile: { active: true }
   EmptySecondaryConstructor: { active: true }
   EmptyTryBlock: { active: true }
   EmptyWhenBlock: { active: true }
