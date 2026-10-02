@@ -94,15 +94,23 @@ val benchmarkIterations = providers.gradleProperty("project.benchmark.iterations
 val benchmarkIterationTime = providers.gradleProperty("project.benchmark.iterationTime").map { it.toLong() }.getOrElse(1L)
 val benchmarkIterationTimeUnit = providers.gradleProperty("project.benchmark.iterationTimeUnit").getOrElse("s")
 
-// The Android Gradle plugin resolves the SDK location while Gradle builds the
-// task graph — before any task executes — so a project-local Android SDK must
-// already be installed by the time configuration runs. setup-android-sdk.sh
-// installs the SDK into this repo's own .android-sdk/ and writes
-// local.properties to point there. It runs unconditionally on every
-// configuration: the script itself is idempotent (an already-installed SDK is
-// a fast no-op), but there is deliberately no Gradle-side condition that could
-// skip the install, and no fallback to a sibling repo's SDK.
-serviceOf<ExecOperations>().exec { commandLine("bash", "./setup-android-sdk.sh") }
+val intellijCoroutinesVersion =
+    providers.gradleProperty("versions.intellij.coroutines").getOrElse("1.10.2-intellij-1")
+
+// KGP runs Swift Export in an isolated worker whose classpath is
+// `swiftExportClasspath`. Adding a dependency disables KGP's default
+// dependency population, so keep the default embeddable runner explicit too.
+val projectDependencyHandler = project.dependencies
+configurations.configureEach {
+    if (name == "swiftExportClasspath") {
+        dependencies.add(projectDependencyHandler.create("org.jetbrains.kotlin:swift-export-embeddable:$kotlinVersion"))
+        dependencies.add(
+            projectDependencyHandler.create(
+                "org.jetbrains.intellij.deps.kotlinx:kotlinx-coroutines-core-jvm:$intellijCoroutinesVersion",
+            ),
+        )
+    }
+}
 
 // Opt-ins shared across Kotlin targets.
 val commonOptIns =
