@@ -1,13 +1,9 @@
-import groovy.json.JsonSlurper
-import org.gradle.api.GradleException
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.api.tasks.ClasspathNormalizer
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.AbstractTestTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.support.serviceOf
-import org.gradle.plugins.signing.Sign
 import org.gradle.process.ExecOperations
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -58,60 +54,15 @@ val commonMainDependencyBundle =
         .findBundle(commonMainBundleName)
         .orElseThrow { GradleException("Missing libs bundle '$commonMainBundleName'") }
 
-fun csvProperty(name: String): Set<String> =
-    providers
-        .gradleProperty(name)
-        .map { value ->
-            value
-                .split(",")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .toSet()
-        }.getOrElse(emptySet())
-
-fun optionalTrimmedProperty(name: String): String? =
-    providers
-        .gradleProperty(name)
-        .map { it.trim() }
-        .orNull
-        ?.takeIf { it.isNotEmpty() }
-
-val enabledFeatureNames = csvProperty("project.features")
-val benchmarkEnabled = "benchmark" in enabledFeatureNames
-val benchmarkTargetNames = csvProperty("project.benchmark.targets")
-val commonBenchmarkBundleName = optionalTrimmedProperty("project.dependencies.commonBenchmarkBundle")
-val commonBenchmarkDependencyBundle =
-    commonBenchmarkBundleName?.let { bundleName ->
-        extensions
-            .getByType(VersionCatalogsExtension::class.java)
-            .named("libs")
-            .findBundle(bundleName)
-            .orElseThrow { GradleException("Missing libs bundle '$bundleName'") }
-    }
-if (benchmarkEnabled && commonBenchmarkDependencyBundle == null) {
-    throw GradleException("Feature 'benchmark' requires project.dependencies.commonBenchmarkBundle")
-}
-val benchmarkWarmups = providers.gradleProperty("project.benchmark.warmups").map { it.toInt() }.getOrElse(3)
-val benchmarkIterations = providers.gradleProperty("project.benchmark.iterations").map { it.toInt() }.getOrElse(5)
-val benchmarkIterationTime = providers.gradleProperty("project.benchmark.iterationTime").map { it.toLong() }.getOrElse(1L)
-val benchmarkIterationTimeUnit = providers.gradleProperty("project.benchmark.iterationTimeUnit").getOrElse("s")
-val intellijCoroutinesVersion =
-    providers.gradleProperty("versions.intellij.coroutines").getOrElse("1.10.2-intellij-1")
-
-// KGP runs Swift Export in an isolated worker whose classpath is
-// `swiftExportClasspath`. Adding a dependency disables KGP's default
-// dependency population, so keep the default embeddable runner explicit too.
-val projectDependencyHandler = project.dependencies
-configurations.configureEach {
-    if (name == "swiftExportClasspath") {
-        dependencies.add(projectDependencyHandler.create("org.jetbrains.kotlin:swift-export-embeddable:$kotlinVersion"))
-        dependencies.add(
-            projectDependencyHandler.create(
-                "org.jetbrains.intellij.deps.kotlinx:kotlinx-coroutines-core-jvm:$intellijCoroutinesVersion",
-            ),
-        )
-    }
-}
+// The Android Gradle plugin resolves the SDK location while Gradle builds the
+// task graph — before any task executes — so a project-local Android SDK must
+// already be installed by the time configuration runs. setup-android-sdk.sh
+// installs the SDK into this repo's own .android-sdk/ and writes
+// local.properties to point there. It runs unconditionally on every
+// configuration: the script itself is idempotent (an already-installed SDK is
+// a fast no-op), but there is deliberately no Gradle-side condition that could
+// skip the install, and no fallback to a sibling repo's SDK.
+serviceOf<ExecOperations>().exec { commandLine("bash", "./setup-android-sdk.sh") }
 
 // Opt-ins shared across Kotlin targets.
 val commonOptIns =
@@ -357,6 +308,12 @@ kotlin {
 
     applyDefaultHierarchyTemplate()
 
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+        languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi")
+        languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+    }
+
     compilerOptions {
         languageVersion.set(KotlinVersion.KOTLIN_2_4)
         apiVersion.set(KotlinVersion.KOTLIN_2_4)
@@ -489,6 +446,8 @@ kotlin {
         }
     }
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             implementation(commonMainDependencyBundle)
@@ -505,6 +464,15 @@ kotlin {
             benchmarkTargetNames.forEach { targetName ->
                 findByName("${targetName}Benchmark")?.dependsOn(commonBenchmark)
             }
+        }
+        val jvmAndAndroidMain by creating {
+            dependsOn(commonMain)
+        }
+        val androidMain by getting {
+            dependsOn(jvmAndAndroidMain)
+        }
+        val jvmMain by getting {
+            dependsOn(jvmAndAndroidMain)
         }
     }
 }
@@ -638,19 +606,34 @@ rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") { version.se
 rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") { version.set(wasmYarnVersion) }
 
 rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
-    project.properties
-        .filterKeys { it.startsWith("yarn.resolution.") }
-        .forEach { (key, value) ->
-            val pkg = key.removePrefix("yarn.resolution.")
-            val ver = value as? String ?: return@forEach
-            resolution(pkg, ver)
-            resolution("**/$pkg", ver)
-        }
-    // webpack resolution sourced from kotlin-js-store/package.json (see above)
-    // rather than a yarn.resolution.webpack property, so it can never override a
-    // Dependabot bump of the store.
-    resolution("webpack", webpackVersion)
-    resolution("**/webpack", webpackVersion)
+    resolution("diff", "8.0.3")
+    resolution("**/diff", "8.0.3")
+    resolution("fast-uri", "3.1.2")
+    resolution("**/fast-uri", "3.1.2")
+    resolution("serialize-javascript", "7.0.5")
+    resolution("**/serialize-javascript", "7.0.5")
+    resolution("webpack", "5.106.2")
+    resolution("**/webpack", "5.106.2")
+    resolution("follow-redirects", "1.16.0")
+    resolution("**/follow-redirects", "1.16.0")
+    resolution("lodash", "4.18.1")
+    resolution("**/lodash", "4.18.1")
+    resolution("ajv", "8.20.0")
+    resolution("**/ajv", "8.20.0")
+    resolution("brace-expansion", "5.0.6")
+    resolution("**/brace-expansion", "5.0.6")
+    resolution("flatted", "3.4.2")
+    resolution("**/flatted", "3.4.2")
+    resolution("minimatch", "10.2.5")
+    resolution("**/minimatch", "10.2.5")
+    resolution("picomatch", "4.0.4")
+    resolution("**/picomatch", "4.0.4")
+    resolution("qs", "6.15.1")
+    resolution("**/qs", "6.15.1")
+    resolution("socket.io-parser", "4.2.6")
+    resolution("**/socket.io-parser", "4.2.6")
+    resolution("ws", "8.20.1")
+    resolution("**/ws", "8.20.1")
 }
 
 val patchedKarmaWebpackPackage =
@@ -670,80 +653,47 @@ rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
     versions.kotlinWebHelpers.version = providers.gradleProperty("node.kotlinWebHelpers.version").getOrElse("3.1.0")
 }
 
-// ============================================================================
-// Maven Central publishing — Central Portal, first-party + bespoke upload
-// ----------------------------------------------------------------------------
-// OSSRH was sunset 2025-06-30; the Central Portal is the only path. Sonatype
-// ships no first-party Gradle plugin, so we use Gradle's own maven-publish +
-// signing (KGP populates the KMP publications) and upload the deployment
-// bundle to the Portal API ourselves.
-//
-// Flow: publish all KMP publications into a local staging Maven layout ->
-// zip it -> POST the zip to the Portal upload endpoint with a Bearer token.
-// ============================================================================
-val publishProjectName = providers.gradleProperty("project.name").getOrElse("unnamed-project")
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
 
-// Central requires a Javadoc jar per publication; KMP produces none, so attach
-// an empty one to every Maven publication.
-val emptyJavadocJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
-}
+    coordinates(group.toString(), "threadlocal-kotlin", version.toString())
 
-publishing {
-    publications.withType<MavenPublication>().configureEach {
-        artifact(emptyJavadocJar)
-        pom {
-            name.set(publishProjectName)
-            description.set(providers.gradleProperty("project.pom.description").getOrElse(""))
-            inceptionYear.set("2026")
-            url.set("https://github.com/KotlinMania/$publishProjectName")
-            licenses {
-                license {
-                    name.set(providers.gradleProperty("project.pom.licenseName").getOrElse("MIT"))
-                    url.set(
-                        providers
-                            .gradleProperty("project.pom.licenseUrl")
-                            .getOrElse("https://opensource.org/licenses/MIT"),
-                    )
-                    distribution.set("repo")
-                }
-            }
-            developers {
-                developer {
-                    id.set("sydneyrenee")
-                    name.set("Sydney Renee")
-                    email.set("sydney@solace.ofharmony.ai")
-                    url.set("https://github.com/sydneyrenee")
-                }
-            }
-            scm {
-                url.set("https://github.com/KotlinMania/$publishProjectName")
-                connection.set("scm:git:git://github.com/KotlinMania/$publishProjectName.git")
-                developerConnection.set("scm:git:ssh://github.com/KotlinMania/$publishProjectName.git")
+    pom {
+        name.set("threadlocal-kotlin")
+        description.set("Kotlin Multiplatform port of Amanieu/thread_local-rs - Per-object thread-local storage")
+        inceptionYear.set("2026")
+        url.set("https://github.com/KotlinMania/threadlocal-kotlin")
+
+        licenses {
+            license {
+                name.set("Apache-2.0")
+                url.set("https://opensource.org/licenses/Apache-2.0")
+                distribution.set("repo")
             }
         }
-    }
 
-    // Stage into a local Maven layout that becomes the Portal deployment bundle.
-    // maven-publish auto-generates the md5/sha1/sha256/sha512 checksums Central
-    // requires; signing (below) adds the .asc signatures.
-    repositories {
-        maven {
-            name = "centralPortalStaging"
-            url = uri(layout.buildDirectory.dir("staging-deploy"))
+        developers {
+            developer {
+                id.set("sydneyrenee")
+                name.set("Sydney Renee")
+                email.set("sydney@solace.ofharmony.ai")
+                url.set("https://github.com/sydneyrenee")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/KotlinMania/threadlocal-kotlin")
+            connection.set("scm:git:git://github.com/KotlinMania/threadlocal-kotlin.git")
+            developerConnection.set("scm:git:ssh://github.com/KotlinMania/threadlocal-kotlin.git")
         }
     }
 }
 
-signing {
-    val signingKey = providers.gradleProperty("signingInMemoryKey").orNull
-    val signingKeyId = providers.gradleProperty("signingInMemoryKeyId").orNull
-    val signingPassword = providers.gradleProperty("signingInMemoryKeyPassword").orNull
-    val signingEnabled = project.findProperty("RELEASE_SIGNING_ENABLED") != "false" && signingKey != null
-    if (signingEnabled) {
-        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        sign(publishing.publications)
-    }
+tasks.register<Exec>("setupAndroidSdk") {
+    group = "setup"
+    description = "Downloads and configures the project-local Android SDK."
+    commandLine("./setup-android-sdk.sh")
 }
 
 val centralPortalPublishTasks =
@@ -905,6 +855,7 @@ tasks.register("hostTests") {
     dependsOn(
         "jvmTest",
         "macosArm64Test",
+        "jvmTest",
         "jsNodeTest",
         "wasmJsNodeTest",
         "wasmWasiNodeTest",
@@ -1072,4 +1023,38 @@ val fullTargetBuildTaskNames =
 
 tasks.named("build") {
     dependsOn(fullTargetBuildTaskNames)
+}
+
+// The generated Wasm-WASI Node test runner cannot see the filesystem unless
+// the project directory is preopened. Patch the runner before wasmWasiNodeTest.
+val patchWasmWasiNodePreopens = tasks.register("patchWasmWasiNodePreopens") {
+    description = "Preopen the project directory for the generated Wasm-WASI Node test runner."
+    group = "verification"
+    dependsOn("compileTestDevelopmentExecutableKotlinWasmWasi")
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val runnerFile = layout.buildDirectory.file(
+            "compileSync/wasmWasi/test/testDevelopmentExecutable/kotlin/${rootProject.name}-test.mjs",
+        ).get().asFile
+        if (!runnerFile.exists()) {
+            // No Wasm-WASI test runner was generated (the repo has no
+            // wasmWasi test sources), so there is nothing to preopen.
+            return@doLast
+        }
+        val text = runnerFile.readText()
+        val withCwdImport = text.replace(
+            "import { argv, env } from 'node:process';",
+            "import { argv, env, cwd } from 'node:process';",
+        )
+        val patched = withCwdImport.replace(
+            "const wasi = new WASI({ version: 'preview1', args: argv, env, });",
+            "const wasi = new WASI({ version: 'preview1', args: argv, env, preopens: { '/': cwd() }, });",
+        )
+        runnerFile.writeText(patched)
+    }
+}
+
+tasks.named("wasmWasiNodeTest") {
+    dependsOn(patchWasmWasiNodePreopens)
 }

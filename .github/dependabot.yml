@@ -9,18 +9,7 @@
 #      and the kotlinx-{coroutines,serialization,datetime,collections-immutable}
 #      runtime dependencies declared in build.gradle.kts.
 #
-#   2. npm/Yarn — the checked-in Kotlin/JS dependency store under
-#      kotlin-js-store/ plus the checked-in Wasm lock under
-#      kotlin-js-store/wasm/. These are the source dependency manifests Gradle
-#      uses to produce JS/Wasm package outputs, so they must be monitored
-#      separately from CodeQL's generated-output scan.
-#      webpack lives in kotlin-js-store/package.json and is fully Dependabot-
-#      managed: build.gradle.kts reads the version out of that package.json to
-#      drive both the yarn resolution and the NodeJsRootExtension pin, so a
-#      Dependabot bump of the store is honored by the build instead of being
-#      overridden by a separate gradle.properties pin.
-#
-#   3. GitHub Actions — the actions pinned across the workflow files in
+#   2. GitHub Actions — the actions pinned across the workflow files in
 #      .github/workflows/. Versions are not enumerated here: Dependabot reads
 #      them straight from the workflow files, and a hand-kept list in this
 #      comment would silently drift from the actual pins.
