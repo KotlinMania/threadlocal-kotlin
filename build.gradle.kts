@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.AbstractTestTask
@@ -53,6 +55,44 @@ val commonMainDependencyBundle =
         .named("libs")
         .findBundle(commonMainBundleName)
         .orElseThrow { GradleException("Missing libs bundle '$commonMainBundleName'") }
+
+fun csvProperty(name: String): Set<String> =
+    providers
+        .gradleProperty(name)
+        .map { value ->
+            value
+                .split(",")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .toSet()
+        }.getOrElse(emptySet())
+
+fun optionalTrimmedProperty(name: String): String? =
+    providers
+        .gradleProperty(name)
+        .map { it.trim() }
+        .orNull
+        ?.takeIf { it.isNotEmpty() }
+
+val enabledFeatureNames = csvProperty("project.features")
+val benchmarkEnabled = "benchmark" in enabledFeatureNames
+val benchmarkTargetNames = csvProperty("project.benchmark.targets")
+val commonBenchmarkBundleName = optionalTrimmedProperty("project.dependencies.commonBenchmarkBundle")
+val commonBenchmarkDependencyBundle =
+    commonBenchmarkBundleName?.let { bundleName ->
+        extensions
+            .getByType(VersionCatalogsExtension::class.java)
+            .named("libs")
+            .findBundle(bundleName)
+            .orElseThrow { GradleException("Missing libs bundle '$bundleName'") }
+    }
+if (benchmarkEnabled && commonBenchmarkDependencyBundle == null) {
+    throw GradleException("Feature 'benchmark' requires project.dependencies.commonBenchmarkBundle")
+}
+val benchmarkWarmups = providers.gradleProperty("project.benchmark.warmups").map { it.toInt() }.getOrElse(3)
+val benchmarkIterations = providers.gradleProperty("project.benchmark.iterations").map { it.toInt() }.getOrElse(5)
+val benchmarkIterationTime = providers.gradleProperty("project.benchmark.iterationTime").map { it.toLong() }.getOrElse(1L)
+val benchmarkIterationTimeUnit = providers.gradleProperty("project.benchmark.iterationTimeUnit").getOrElse("s")
 
 // The Android Gradle plugin resolves the SDK location while Gradle builds the
 // task graph — before any task executes — so a project-local Android SDK must
@@ -446,7 +486,6 @@ kotlin {
         }
     }
 
-    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -466,7 +505,7 @@ kotlin {
             }
         }
         val jvmAndAndroidMain by creating {
-            dependsOn(commonMain)
+            dependsOn(commonMain.get())
         }
         val androidMain by getting {
             dependsOn(jvmAndAndroidMain)
@@ -525,24 +564,24 @@ tasks.withType<AbstractTestTask>().configureEach {
 // Static analysis: Detekt + Ktlint
 // ============================================================================
 detekt {
-    buildUponDefaultConfig = true
-    allRules = false
-    autoCorrect = false
+    buildUponDefaultConfig.set(true)
+    allRules.set(false)
+    autoCorrect.set(false)
     source.setFrom(files("src"))
     config.setFrom(files("detekt.yml"))
-    parallel = true
+    parallel.set(true)
 }
 
-tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
     reports {
         html.required.set(true)
         sarif.required.set(true)
-        txt.required.set(false)
-        xml.required.set(false)
+        checkstyle.required.set(false)
     }
 }
 
 ktlint {
+    version.set(libs.versions.ktlintEngine.get())
     debug.set(false)
     verbose.set(false)
     android.set(false)
@@ -560,7 +599,7 @@ ktlint {
 
 if (benchmarkEnabled) {
     tasks
-        .withType<io.gitlab.arturbosch.detekt.Detekt>()
+        .withType<dev.detekt.gradle.Detekt>()
         .matching {
             it.name.contains("BenchmarkBenchmark")
         }.configureEach {
@@ -576,7 +615,7 @@ if (benchmarkEnabled) {
 }
 
 tasks.named("check") {
-    dependsOn(tasks.withType<io.gitlab.arturbosch.detekt.Detekt>())
+    dependsOn(tasks.withType<dev.detekt.gradle.Detekt>())
     dependsOn(tasks.named("ktlintCheck"))
     dependsOn("test")
 }
@@ -653,47 +692,70 @@ rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
     versions.kotlinWebHelpers.version = providers.gradleProperty("node.kotlinWebHelpers.version").getOrElse("3.1.0")
 }
 
-mavenPublishing {
-    publishToMavenCentral()
-    signAllPublications()
+val publishProjectName = providers.gradleProperty("project.name").getOrElse("unnamed-project")
 
-    coordinates(group.toString(), "threadlocal-kotlin", version.toString())
+// Central requires a Javadoc jar per publication; KMP produces none, so attach
+// an empty one to every Maven publication.
+val emptyJavadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+}
 
-    pom {
-        name.set("threadlocal-kotlin")
-        description.set("Kotlin Multiplatform port of Amanieu/thread_local-rs - Per-object thread-local storage")
-        inceptionYear.set("2026")
-        url.set("https://github.com/KotlinMania/threadlocal-kotlin")
-
-        licenses {
-            license {
-                name.set("Apache-2.0")
-                url.set("https://opensource.org/licenses/Apache-2.0")
-                distribution.set("repo")
-            }
-        }
-
-        developers {
-            developer {
-                id.set("sydneyrenee")
-                name.set("Sydney Renee")
-                email.set("sydney@solace.ofharmony.ai")
-                url.set("https://github.com/sydneyrenee")
-            }
-        }
-
-        scm {
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        artifact(emptyJavadocJar)
+        pom {
+            name.set("threadlocal-kotlin")
+            description.set("Kotlin Multiplatform port of Amanieu/thread_local-rs - Per-object thread-local storage")
+            inceptionYear.set("2026")
             url.set("https://github.com/KotlinMania/threadlocal-kotlin")
-            connection.set("scm:git:git://github.com/KotlinMania/threadlocal-kotlin.git")
-            developerConnection.set("scm:git:ssh://github.com/KotlinMania/threadlocal-kotlin.git")
+
+            licenses {
+                license {
+                    name.set("Apache-2.0")
+                    url.set("https://opensource.org/licenses/Apache-2.0")
+                    distribution.set("repo")
+                }
+            }
+
+            developers {
+                developer {
+                    id.set("sydneyrenee")
+                    name.set("Sydney Renee")
+                    email.set("sydney@solace.ofharmony.ai")
+                    url.set("https://github.com/sydneyrenee")
+                }
+            }
+
+            scm {
+                url.set("https://github.com/KotlinMania/threadlocal-kotlin")
+                connection.set("scm:git:git://github.com/KotlinMania/threadlocal-kotlin.git")
+                developerConnection.set("scm:git:ssh://github.com/KotlinMania/threadlocal-kotlin.git")
+            }
+        }
+    }
+
+    // Stage into a local Maven layout that becomes the Portal deployment bundle.
+    // maven-publish auto-generates the md5/sha1/sha256/sha512 checksums Central
+    // requires; signing (below) adds the .asc signatures.
+    repositories {
+        maven {
+            name = "centralPortalStaging"
+            url = uri(layout.buildDirectory.dir("staging-deploy"))
         }
     }
 }
 
-tasks.register<Exec>("setupAndroidSdk") {
-    group = "setup"
-    description = "Downloads and configures the project-local Android SDK."
-    commandLine("./setup-android-sdk.sh")
+
+
+signing {
+    val signingKey = providers.gradleProperty("signingInMemoryKey").orNull
+    val signingKeyId = providers.gradleProperty("signingInMemoryKeyId").orNull
+    val signingPassword = providers.gradleProperty("signingInMemoryKeyPassword").orNull
+    val signingEnabled = project.findProperty("RELEASE_SIGNING_ENABLED") != "false" && signingKey != null
+    if (signingEnabled) {
+        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        sign(publishing.publications)
+    }
 }
 
 val centralPortalPublishTasks =
