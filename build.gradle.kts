@@ -948,7 +948,7 @@ tasks.matching { it.name.contains("GenerateSPMPackage") }.configureEach {
                     file.writeText(
                         text.replaceFirst(
                             Regex("""(let package = Package\s*\(\s*name:\s*"[^"]*",)"""),
-                            "$1\n    platforms: [.macOS(.v14)],",
+                            "$1\n    platforms: [.macOS(\"15.0\")],",
                         ),
                     )
                 }
@@ -998,7 +998,7 @@ tasks.register("swiftExportSmokeTest") {
                         "CONFIGURATION" to "Debug",
                         "ARCHS" to "arm64",
                         "FRAMEWORKS_FOLDER_PATH" to "Frameworks",
-                        "MACOSX_DEPLOYMENT_TARGET" to "14.0",
+                        "MACOSX_DEPLOYMENT_TARGET" to "15.0",
                         "DEPLOYMENT_TARGET_SETTING_NAME" to "MACOSX_DEPLOYMENT_TARGET",
                     ),
                 )
@@ -1015,7 +1015,7 @@ tasks.register("swiftExportSmokeTest") {
                 generatedPackageSwift.writeText(
                     text.replaceFirst(
                         Regex("(name:\\s*\"[^\"]*\",)"),
-                        "\$1\n    platforms: [.macOS(.v14)],",
+                        "\$1\n    platforms: [.macOS(\"15.0\")],",
                     ),
                 )
             }
