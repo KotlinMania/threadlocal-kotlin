@@ -1,45 +1,8 @@
 name: "CodeQL Advanced"
 
-# Job names, step names, and matrix shape follow GitHub's canonical
-# "CodeQL Advanced" Code Scanning template exactly. The Code Scanning UI
-# registers configurations keyed off `(workflow_path, job_id, category)`
-# tuples and shows status using template-default identifiers; deviating
-# from those names produces orphan configuration cards in the UI that
-# can't be cleaned up via API (PR-merge analyses are non-deletable).
-#
-# Three matrix entries cover the languages CodeQL detects in this repo:
-#   - actions             (source-only)
-#   - java-kotlin         (manual build via compileAndroidMain — see note)
-#   - javascript-typescript (source-only)
-#
-# For java-kotlin, the matrix-shared `Initialize CodeQL -> Perform CodeQL
-# Analysis` flow is augmented with two conditional steps that run ONLY
-# for that language:
-#
-#   1. JDK + Gradle setup (the other two languages need no toolchain).
-#   2. A `./gradlew compileAndroidMain compileKotlinJs compileKotlinWasmJs`
-#      invocation under the CodeQL build tracer.
-#
-# This is a strict-KMP project with no JVM target, so the autobuild
-# default for java-kotlin (`./gradlew testClasses`) has no task to run
-# and `build-mode: none` extracts nothing. The
-# `com.android.kotlin.multiplatform.library` plugin, however, runs the
-# JVM `kotlinc` for the android target and emits real `.class` files
-# under `build/classes/kotlin/android/main` -- exactly what the
-# extractor's LD_PRELOAD tracer (installed by `Initialize CodeQL`)
-# hooks. `compileAndroidMain` therefore carries the java-kotlin
-# analysis; `compileKotlinJs`/`compileKotlinWasmJs` are added on the
-# chance the tracer also matches the JS/WASM `kotlinc` execs.
-# `--rerun-tasks --no-build-cache` defeat Gradle's up-to-date check so
-# kotlinc actually runs; `-Pkotlin.compiler.execution.strategy=out-of-process`
-# plus `--no-configuration-cache --no-daemon` force a fresh traceable
-# `kotlinc` exec per compilation. That is why this file uses
-# `build-mode: manual` for java-kotlin even though autobuild is the
-# template default.
-
 on:
   schedule:
-    - cron: "0 7 * * 1"
+    - cron: '44 16 * * 0'
   workflow_dispatch:
 
 permissions:
@@ -70,50 +33,10 @@ jobs:
       packages: read
       security-events: write
 
-      # JDK + Gradle setup only for java-kotlin; the source-only languages
-      # don't run any build at all.
-      - name: Set up JDK 21
-        if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v5.2.0
-        with:
-          distribution: zulu
-          java-version: '21'
-
-      - name: Setup Gradle
-        if: matrix.language == 'java-kotlin'
-        uses: gradle/actions/setup-gradle@v6.1.0
-
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-          # Restores+stores the CodeQL bundle and dependency cache between
-          # runs. Default off in Advanced Setup; turning on cuts ~30-60s
-          # off the init step on warm cache.
-          dependency-caching: true
-
-      # Manual build: only java-kotlin gates this. `Initialize CodeQL`
-      # above installs the LD_PRELOAD build tracer into the environment;
-      # the Gradle invocation below runs the android (and JS/WASM)
-      # `kotlinc` compilers as fresh out-of-process execs that the
-      # tracer intercepts, writing per-source `*.kt.trap.gz` extractor
-      # output under ${CODEQL_EXTRACTOR_JAVA_TRAP_DIR}.
-      - name: Run manual build steps
-        if: matrix.build-mode == 'manual'
-        run: |
-          ./gradlew \
-            compileAndroidMain \
-            compileKotlinJs \
-            compileKotlinWasmJs \
-            --rerun-tasks \
-            --no-build-cache \
-            -Pkotlin.compiler.execution.strategy=out-of-process \
-            --no-configuration-cache \
-            --no-daemon
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: "/language:${{ matrix.language }}"
+  javascript-typescript:
+    uses: ./.github/workflows/codeql-javascript-typescript.yml
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: write
