@@ -383,6 +383,7 @@ internal class Iter<T : Any> internal constructor(
     private val threadLocal: ThreadLocal<T>,
 ) : Iterator<T> {
     private val raw: RawIter = RawIter()
+
     override fun hasNext(): Boolean = raw.hasNext(threadLocal)
 
     override fun next(): T = raw.next(threadLocal) ?: throw NoSuchElementException()

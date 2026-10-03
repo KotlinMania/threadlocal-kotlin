@@ -7,7 +7,9 @@ import io.github.kotlinmania.threadlocal.Thread
  * collapses to a plain process-global map, keyed by [Symbol] to keep
  * the same call surface as the multithreaded actuals.
  */
-internal actual class CommonThreadLocal actual constructor(private val name: Symbol) {
+internal actual class CommonThreadLocal actual constructor(
+    private val name: Symbol,
+) {
     actual fun get(): Thread? = storage[name]
 
     actual fun set(value: Thread?) {
