@@ -494,7 +494,6 @@ kotlin {
         }
     }
 
-
     sourceSets {
         commonMain.dependencies {
             implementation(commonMainDependencyBundle)
@@ -649,39 +648,73 @@ val webpackVersion: String =
 
 rootProject.extensions.configure<NodeJsEnvSpec>("kotlinNodeJsSpec") { version.set(nodeVersion) }
 rootProject.extensions.configure<WasmNodeJsEnvSpec>("kotlinWasmNodeJsSpec") { version.set(wasmNodeVersion) }
-rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") { version.set(yarnVersion) }
-rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") { version.set(wasmYarnVersion) }
+rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") {
+    version.set(yarnVersion)
+    yarnLockMismatchReport.set(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport.WARNING)
+    yarnLockAutoReplace.set(true)
+}
+rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") {
+    version.set(wasmYarnVersion)
+    yarnLockMismatchReport.set(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport.WARNING)
+    yarnLockAutoReplace.set(true)
+}
 
 rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
-    resolution("diff", "8.0.3")
-    resolution("**/diff", "8.0.3")
-    resolution("fast-uri", "3.1.2")
-    resolution("**/fast-uri", "3.1.2")
-    resolution("serialize-javascript", "7.0.5")
-    resolution("**/serialize-javascript", "7.0.5")
-    resolution("webpack", "5.106.2")
-    resolution("**/webpack", "5.106.2")
-    resolution("follow-redirects", "1.16.0")
-    resolution("**/follow-redirects", "1.16.0")
-    resolution("lodash", "4.18.1")
-    resolution("**/lodash", "4.18.1")
-    resolution("ajv", "8.20.0")
-    resolution("**/ajv", "8.20.0")
-    resolution("brace-expansion", "5.0.6")
-    resolution("**/brace-expansion", "5.0.6")
-    resolution("flatted", "3.4.2")
-    resolution("**/flatted", "3.4.2")
-    resolution("minimatch", "10.2.5")
-    resolution("**/minimatch", "10.2.5")
-    resolution("picomatch", "4.0.4")
-    resolution("**/picomatch", "4.0.4")
-    resolution("qs", "6.15.1")
-    resolution("**/qs", "6.15.1")
-    resolution("socket.io-parser", "4.2.6")
-    resolution("**/socket.io-parser", "4.2.6")
-    resolution("ws", "8.20.1")
-    resolution("**/ws", "8.20.1")
+    project.properties
+        .filterKeys { it.startsWith("yarn.resolution.") }
+        .forEach { (key, value) ->
+            val pkg = key.removePrefix("yarn.resolution.")
+            val ver = value as? String ?: return@forEach
+            resolution(pkg, ver)
+            resolution("**/$pkg", ver)
+        }
+    // webpack resolution sourced from kotlin-js-store/package.json (see above)
+    // rather than a yarn.resolution.webpack property, so it can never override a
+    // Dependabot bump of the store.
+    resolution("webpack", webpackVersion)
+    resolution("**/webpack", webpackVersion)
 }
+
+// Make kotlinUpgradeYarnLock and kotlinWasmUpgradeYarnLock dependencies in the build process
+// for KotlinJS and other JavaScript/WASM targets so that yarn.lock is always upgraded automatically.
+val jsTasksNeedingYarnLock =
+    setOf(
+        "compileKotlinJs",
+        "compileTestKotlinJs",
+        "jsProcessResources",
+        "jsTestProcessResources",
+        "jsNodeTest",
+        "jsBrowserTest",
+        "kotlinStoreYarnLock",
+    )
+
+tasks
+    .matching { it.name in jsTasksNeedingYarnLock }
+    .configureEach {
+        dependsOn("kotlinUpgradeYarnLock")
+    }
+
+val wasmTasksNeedingYarnLock =
+    setOf(
+        "compileKotlinWasmJs",
+        "compileTestKotlinWasmJs",
+        "wasmJsProcessResources",
+        "wasmJsTestProcessResources",
+        "wasmJsNodeTest",
+        "wasmJsBrowserTest",
+        "compileKotlinWasmWasi",
+        "compileTestKotlinWasmWasi",
+        "wasmWasiProcessResources",
+        "wasmWasiTestProcessResources",
+        "wasmWasiNodeTest",
+        "kotlinWasmStoreYarnLock",
+    )
+
+tasks
+    .matching { it.name in wasmTasksNeedingYarnLock }
+    .configureEach {
+        dependsOn("kotlinWasmUpgradeYarnLock")
+    }
 
 val patchedKarmaWebpackPackage =
     rootProject.layout.projectDirectory
@@ -752,8 +785,6 @@ publishing {
         }
     }
 }
-
-
 
 signing {
     val signingKey = providers.gradleProperty("signingInMemoryKey").orNull
@@ -875,7 +906,10 @@ val publishToCentralPortal by tasks.registering {
                 statusBody["deploymentState"]?.toString()
                     ?: error("Central Portal status response did not contain deploymentState: ${statusResponse.body()}")
             when (deploymentState) {
-                "FAILED" -> error("Central Portal deployment failed: ${statusBody["errors"] ?: statusResponse.body()}")
+                "FAILED" -> {
+                    error("Central Portal deployment failed: ${statusBody["errors"] ?: statusResponse.body()}")
+                }
+
                 in terminalStates -> {
                     logger.lifecycle("Central Portal deployment $deploymentId reached $deploymentState.")
                     return@doLast
@@ -1097,33 +1131,39 @@ tasks.named("build") {
 
 // The generated Wasm-WASI Node test runner cannot see the filesystem unless
 // the project directory is preopened. Patch the runner before wasmWasiNodeTest.
-val patchWasmWasiNodePreopens = tasks.register("patchWasmWasiNodePreopens") {
-    description = "Preopen the project directory for the generated Wasm-WASI Node test runner."
-    group = "verification"
-    dependsOn("compileTestDevelopmentExecutableKotlinWasmWasi")
-    outputs.upToDateWhen { false }
+val patchWasmWasiNodePreopens =
+    tasks.register("patchWasmWasiNodePreopens") {
+        description = "Preopen the project directory for the generated Wasm-WASI Node test runner."
+        group = "verification"
+        dependsOn("compileTestDevelopmentExecutableKotlinWasmWasi")
+        outputs.upToDateWhen { false }
 
-    doLast {
-        val runnerFile = layout.buildDirectory.file(
-            "compileSync/wasmWasi/test/testDevelopmentExecutable/kotlin/${rootProject.name}-test.mjs",
-        ).get().asFile
-        if (!runnerFile.exists()) {
-            // No Wasm-WASI test runner was generated (the repo has no
-            // wasmWasi test sources), so there is nothing to preopen.
-            return@doLast
+        doLast {
+            val runnerFile =
+                layout.buildDirectory
+                    .file(
+                        "compileSync/wasmWasi/test/testDevelopmentExecutable/kotlin/${rootProject.name}-test.mjs",
+                    ).get()
+                    .asFile
+            if (!runnerFile.exists()) {
+                // No Wasm-WASI test runner was generated (the repo has no
+                // wasmWasi test sources), so there is nothing to preopen.
+                return@doLast
+            }
+            val text = runnerFile.readText()
+            val withCwdImport =
+                text.replace(
+                    "import { argv, env } from 'node:process';",
+                    "import { argv, env, cwd } from 'node:process';",
+                )
+            val patched =
+                withCwdImport.replace(
+                    "const wasi = new WASI({ version: 'preview1', args: argv, env, });",
+                    "const wasi = new WASI({ version: 'preview1', args: argv, env, preopens: { '/': cwd() }, });",
+                )
+            runnerFile.writeText(patched)
         }
-        val text = runnerFile.readText()
-        val withCwdImport = text.replace(
-            "import { argv, env } from 'node:process';",
-            "import { argv, env, cwd } from 'node:process';",
-        )
-        val patched = withCwdImport.replace(
-            "const wasi = new WASI({ version: 'preview1', args: argv, env, });",
-            "const wasi = new WASI({ version: 'preview1', args: argv, env, preopens: { '/': cwd() }, });",
-        )
-        runnerFile.writeText(patched)
     }
-}
 
 tasks.named("wasmWasiNodeTest") {
     dependsOn(patchWasmWasiNodePreopens)
