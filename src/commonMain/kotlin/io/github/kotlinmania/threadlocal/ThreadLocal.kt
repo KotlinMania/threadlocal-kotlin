@@ -301,6 +301,25 @@ internal class RawIter {
     var bucketSize: Int = 1
     var index: Int = 0
 
+    fun <T : Any> hasNext(threadLocal: ThreadLocal<T>): Boolean {
+        var nextBucket = bucket
+        var nextBucketSize = bucketSize
+        var nextIndex = index
+        while (nextBucket < BUCKETS) {
+            val entries = threadLocal.buckets[nextBucket].ref.value
+            if (entries != null) {
+                while (nextIndex < nextBucketSize) {
+                    if (entries[nextIndex].present.value) return true
+                    nextIndex += 1
+                }
+            }
+            nextBucketSize = nextBucketSize shl 1
+            nextBucket += 1
+            nextIndex = 0
+        }
+        return false
+    }
+
     fun <T : Any> next(threadLocal: ThreadLocal<T>): T? {
         while (bucket < BUCKETS) {
             val bucketArr = threadLocal.buckets[bucket].ref.value
@@ -364,19 +383,10 @@ internal class Iter<T : Any> internal constructor(
     private val threadLocal: ThreadLocal<T>,
 ) : Iterator<T> {
     private val raw: RawIter = RawIter()
-    private var pending: T? = null
 
-    override fun hasNext(): Boolean {
-        if (pending != null) return true
-        pending = raw.next(threadLocal)
-        return pending != null
-    }
+    override fun hasNext(): Boolean = raw.hasNext(threadLocal)
 
-    override fun next(): T {
-        val v = pending ?: raw.next(threadLocal) ?: throw NoSuchElementException()
-        pending = null
-        return v
-    }
+    override fun next(): T = raw.next(threadLocal) ?: throw NoSuchElementException()
 
     public fun sizeHint(): Pair<Int, Int?> = raw.sizeHint(threadLocal)
 
