@@ -47,3 +47,5 @@ __pycache__/
 # Android SDK
 /.android-sdk/
 local.properties
+
+tools/ast_distance
