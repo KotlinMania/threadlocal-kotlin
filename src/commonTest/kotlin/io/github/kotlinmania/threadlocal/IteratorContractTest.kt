@@ -61,4 +61,42 @@ class IteratorContractTest {
         repeat(3) { assertFalse(iterator.hasNext()) }
         assertFailsWith<NoSuchElementException> { iterator.next() }
     }
+
+    @Test
+    fun mutableIteratorWithGapsCountsPendingValues() {
+        val iterator = IterMut(localWithGaps())
+        for (value in listOf(11, 23)) {
+            val remaining = if (value == 11) 2 else 1
+            repeat(3) {
+                assertTrue(iterator.hasNext())
+                assertEquals(Pair(remaining, remaining), iterator.sizeHint())
+            }
+            assertEquals(value, iterator.next())
+            assertEquals(Pair(remaining - 1, remaining - 1), iterator.sizeHint())
+        }
+        assertFalse(iterator.hasNext())
+        assertFailsWith<NoSuchElementException> { iterator.next() }
+        assertEquals(Pair(0, 0), iterator.sizeHint())
+    }
+
+    @Test
+    fun consumingIteratorWithGapsCountsPendingValues() {
+        val local = localWithGaps()
+        val iterator = IntoIter(local)
+        assertEquals(0, local.values.value)
+        local.insert(Thread.new(1234), 99)
+        for (value in listOf(11, 23)) {
+            val remaining = if (value == 11) 2 else 1
+            repeat(3) {
+                assertTrue(iterator.hasNext())
+                assertEquals(Pair(remaining, remaining), iterator.sizeHint())
+            }
+            assertEquals(value, iterator.next())
+            assertEquals(Pair(remaining - 1, remaining - 1), iterator.sizeHint())
+        }
+        assertFalse(iterator.hasNext())
+        assertFailsWith<NoSuchElementException> { iterator.next() }
+        assertEquals(Pair(0, 0), iterator.sizeHint())
+        assertEquals(listOf(99), local.intoIter().asSequence().toList())
+    }
 }

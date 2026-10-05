@@ -418,7 +418,10 @@ internal class IterMut<T : Any> internal constructor(
         return v
     }
 
-    public fun sizeHint(): Pair<Int, Int?> = raw.sizeHintFrozen(threadLocal)
+    public fun sizeHint(): Pair<Int, Int?> {
+        val remaining = raw.sizeHintFrozen(threadLocal).first + if (pending != null) 1 else 0
+        return Pair(remaining, remaining)
+    }
 
     // Manual toString so we don't call `toString` on the [ThreadLocal], as
     // doing so would create a reference to this thread's value that
@@ -486,7 +489,7 @@ internal class IntoIter<T : Any> internal constructor(
     }
 
     public fun sizeHint(): Pair<Int, Int?> {
-        val remaining = total - yielded
+        val remaining = total - yielded + if (pending != null) 1 else 0
         return Pair(remaining, remaining)
     }
 }
