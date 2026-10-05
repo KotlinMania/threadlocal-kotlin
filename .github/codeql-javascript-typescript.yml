@@ -1,8 +1,0 @@
-name: KotlinMania JavaScript and TypeScript
-
-# Keep generated project outputs in scope; exclude vendored and cache trees.
-paths-ignore:
-  - tmp/**
-  - '**/node_modules/**'
-  - .gradle/**
-  - .konan/**
