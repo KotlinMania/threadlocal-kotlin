@@ -2,7 +2,6 @@ name: CI
 
 on:
   workflow_dispatch:
-
 # Least-privilege default for any inline job in this file. The reusable
 # workflows invoked below declare their own permissions; this top-level
 # block only applies to direct jobs in ci.yml itself.
@@ -15,9 +14,6 @@ permissions:
 # line in the Checks UI — "Build (WASM)" shows up by itself, not as a step
 # inside a larger combined job. Re-runs and pass/fail attribution happen at
 # the platform granularity.
-#
-# CodeQL workflows live in .github/workflows/codeql.yml and are NOT invoked
-# from here — they have their own trigger and run independently.
 #
 # Branch trigger is `main` only. The previous shape `[main, master]` would
 # fire CI on any branch literally named `master`, which is a workflow-content
