@@ -270,6 +270,12 @@ public class ThreadLocal<T : Any> {
     override fun toString(): String = "ThreadLocal { local_data: ${get()} }"
 
     public companion object {
+        /** Creates a new empty [ThreadLocal]. */
+        public fun <T : Any> new(): ThreadLocal<T> = ThreadLocal()
+
+        /** Creates a new empty [ThreadLocal]. */
+        public fun <T : Any> default(): ThreadLocal<T> = new()
+
         /**
          * Creates a new [ThreadLocal] with an initial capacity. If
          * less than the capacity threads access the thread local it

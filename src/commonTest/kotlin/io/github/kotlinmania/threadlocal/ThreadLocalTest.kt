@@ -105,6 +105,19 @@ class ThreadLocalTest {
     }
 
     @Test
+    fun newAndDefaultConstructors() {
+        val fromNew = ThreadLocal.new<Int>()
+        assertNull(fromNew.get())
+        assertEquals(10, fromNew.getOr { 10 })
+        assertEquals(10, fromNew.get())
+
+        val fromDefault = ThreadLocal.default<String>()
+        assertNull(fromDefault.get())
+        assertEquals("default", fromDefault.getOr { "default" })
+        assertEquals("default", fromDefault.get())
+    }
+
+    @Test
     fun isSync() {
         // Compile-time check that ThreadLocal<String> can be instantiated and used.
         val local: ThreadLocal<String> = ThreadLocal()
