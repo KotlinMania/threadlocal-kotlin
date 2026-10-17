@@ -1,4 +1,3 @@
-// port-lint: tests lib.rs
 package io.github.kotlinmania.threadlocal
 
 import kotlin.test.Test
@@ -35,14 +34,15 @@ class ThreadLocalTest {
 
     @Test
     fun testDrop() {
-        // Kotlin is GC-managed and does not have deterministic drop, so the
-        // closest faithful assertion is that draining via intoIter visits every
-        // entry exactly once and removes it from the ThreadLocal.
         class Dropped(
             val counter: Counter,
-        ) {
-            fun observe() {
+        ) : AutoCloseable {
+            override fun close() {
                 counter.value.incrementAndGet()
+            }
+
+            fun drop() {
+                close()
             }
         }
 
@@ -51,12 +51,7 @@ class ThreadLocalTest {
         local.getOr { Dropped(dropped) }
         assertEquals(0, dropped.value.value)
 
-        var visited = 0
-        for (entry in local.intoIter()) {
-            entry.observe()
-            visited += 1
-        }
-        assertEquals(1, visited)
+        local.drop()
         assertEquals(1, dropped.value.value)
         assertNull(local.get())
     }
@@ -65,9 +60,13 @@ class ThreadLocalTest {
     fun testEarlyreturnBuckets() {
         class Dropped(
             val counter: Counter,
-        ) {
-            fun observe() {
+        ) : AutoCloseable {
+            override fun close() {
                 counter.value.incrementAndGet()
+            }
+
+            fun drop() {
+                close()
             }
         }
 
@@ -88,10 +87,9 @@ class ThreadLocalTest {
         val firstMut = local.iterMut().asSequence().first()
         assertEquals(0, firstMut.counter.value.value)
 
-        for (entry in local.intoIter()) {
-            entry.observe()
-        }
+        local.drop()
         assertEquals(1, dropped.value.value)
+        assertNull(local.get())
     }
 
     @Test
@@ -119,7 +117,8 @@ class ThreadLocalTest {
 
     @Test
     fun isSync() {
-        // Compile-time check that ThreadLocal<String> can be instantiated and used.
+        fun <T : Any> foo() {}
+        foo<ThreadLocal<String>>()
         val local: ThreadLocal<String> = ThreadLocal()
         assertNull(local.get())
     }
