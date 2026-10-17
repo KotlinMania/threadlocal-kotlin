@@ -1,4 +1,3 @@
-// port-lint: source lib.rs
 /**
  * Per-object thread-local storage.
  *
@@ -124,6 +123,17 @@ public class TryResult<T>(
 internal class Entry<T : Any> {
     val present: AtomicBoolean = atomic(false)
     val value: AtomicRef<T?> = atomic(null)
+
+    internal fun drop() {
+        if (present.value) {
+            present.value = false
+            val v = value.value
+            value.value = null
+            if (v is AutoCloseable) {
+                v.close()
+            }
+        }
+    }
 }
 
 internal class AtomicBucket<T> {
@@ -257,13 +267,24 @@ public class ThreadLocal<T : Any> {
     public fun intoIter(): Iterator<T> = IntoIter(this)
 
     /**
+     * Drops all stored thread-local values across all allocated buckets.
+     * Parallels Rust `Drop for ThreadLocal<T>`.
+     */
+    public fun drop() {
+        for (i in 0 until BUCKETS) {
+            val bucket = buckets[i].ref.value ?: continue
+            val thisBucketSize = 1 shl i
+            deallocateBucket(bucket, thisBucketSize)
+            buckets[i].ref.value = null
+        }
+    }
+
+    /**
      * Removes all thread-specific values from the [ThreadLocal],
      * effectively resetting it to its original state.
      */
     public fun clear() {
-        for (i in 0 until BUCKETS) {
-            buckets[i].ref.value = null
-        }
+        drop()
         values.value = 0
     }
 
@@ -296,6 +317,16 @@ public class ThreadLocal<T : Any> {
  */
 private fun <T : Any> allocateBucket(size: Int): Array<Entry<T>> =
     Array(size) { Entry() }
+
+/**
+ * Deallocates a bucket of the given size. In Kotlin, clearing entries
+ * allows GC to reclaim references and invokes [Entry.drop].
+ */
+internal fun <T : Any> deallocateBucket(bucket: Array<Entry<T>>, size: Int) {
+    for (i in 0 until size.coerceAtMost(bucket.size)) {
+        bucket[i].drop()
+    }
+}
 
 /**
  * Shared per-iteration state used by [Iter], [IterMut], and
@@ -344,7 +375,7 @@ internal class RawIter {
         return null
     }
 
-    fun <T : Any> nextEntry(threadLocal: ThreadLocal<T>): Entry<T>? {
+    fun <T : Any> nextMut(threadLocal: ThreadLocal<T>): Entry<T>? {
         if (threadLocal.values.value == yielded) return null
         while (bucket < BUCKETS) {
             val bucketArr = threadLocal.buckets[bucket].ref.value
@@ -362,6 +393,8 @@ internal class RawIter {
         }
         return null
     }
+
+    fun <T : Any> nextEntry(threadLocal: ThreadLocal<T>): Entry<T>? = nextMut(threadLocal)
 
     private fun nextBucket() {
         bucketSize = bucketSize shl 1
@@ -409,14 +442,14 @@ internal class IterMut<T : Any> internal constructor(
 
     override fun hasNext(): Boolean {
         if (pending != null) return true
-        val entry = raw.nextEntry(threadLocal) ?: return false
+        val entry = raw.nextMut(threadLocal) ?: return false
         pending = entry.value.value
         return true
     }
 
     override fun next(): T {
         if (pending == null) {
-            val entry = raw.nextEntry(threadLocal) ?: throw NoSuchElementException()
+            val entry = raw.nextMut(threadLocal) ?: throw NoSuchElementException()
             pending = entry.value.value
         }
         val v = pending!!
