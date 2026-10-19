@@ -26,6 +26,9 @@ performance:
 
 style:
   active: true
+  AbstractClassCanBeConcreteClass: { active: false }
+  AbstractClassCanBeInterface: { active: false }
+  MayBeConstant: { active: false }
   MagicNumber: { active: false }
   NewLineAtEndOfFile: { active: true }
   ReturnCount: { active: false }
@@ -75,6 +78,7 @@ empty-blocks:
 
 naming:
   active: true
+  MemberNameEqualsClassName: { active: false }
   TopLevelPropertyNaming: { active: false }
   FunctionNaming: { active: false }
   ClassNaming: { active: true }
